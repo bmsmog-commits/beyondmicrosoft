@@ -14,7 +14,7 @@ export const personal = {
   cvPath: '/assets/documents/gabriel-cv.pdf',
   logo: '/assets/brand/logo.png',
   logoSvg: '/assets/brand/logo.svg',
-  profile: '/assets/profile/gabriel-profile.jpg',
+  profile: "/assets/images/gabriel-owolabi-professional-headshot.jpg",
   headerImage: '/assets/profile/header-image.jpg',
   card: '/assets/profile/complimentary-card.jpg',
 };
