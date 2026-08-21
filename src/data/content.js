@@ -3,11 +3,11 @@ export const personal = {
   shortBrand: 'BMS',
   founder: 'Gabriel Owolabi',
   title: 'Creative Technologist',
-  positioning: 'Creativity Meets Technology. Ideas Become Intelligent Solutions.',
+  positioning: 'Building Brands. Automating Growth. Creating Impact.',
   descriptor:
-    'Creative Technologist | AI Automation | Software & Web Development | Brand Design | Copywriting',
+    'Creative Technologist & Founder of Beyond Microsoft',
   intro:
-    "I'm Gabriel Owolabi, a Creative Technologist helping businesses, startups and organizations communicate better, build smarter digital experiences and automate what slows them down.",
+    'Beyond Microsoft helps businesses build better digital brands, automate repetitive processes, and communicate their value clearly through technology, design and strategic content.',
   philosophy:
     'Technology should not make things more complicated. It should make possibilities simpler.',
   email: 'hello@beyondmicrosoft.dev',
@@ -23,20 +23,64 @@ export const navItems = [
   ['Home', 'home'],
   ['About', 'about'],
   ['Services', 'services'],
-  ['Expertise', 'expertise'],
   ['Work', 'work'],
-  ['Credentials', 'credentials'],
   ['Insights', 'insights'],
   ['Contact', 'contact'],
 ];
 
 export const trustStrip = [
-  'Copywriting',
+  'Brand Strategy',
+  'Web Design',
   'AI Automation',
-  'Web Development',
-  'Software',
-  'Brand Design',
-  'Digital Solutions',
+  'Copywriting',
+  'Digital Strategy',
+  'Technology Consulting',
+];
+
+export const problems = [
+  {
+    title: 'Weak digital presence',
+    text: 'A business can be excellent offline and still lose trust online when the brand, website and message feel unclear.',
+    icon: 'window',
+  },
+  {
+    title: 'Manual work slows growth',
+    text: 'Repetitive processes consume time that founders and teams could use for sales, service and strategy.',
+    icon: 'flow',
+  },
+  {
+    title: 'Unclear messaging',
+    text: 'Many businesses know their value but struggle to explain it simply, persuasively and consistently.',
+    icon: 'message',
+  },
+  {
+    title: 'Disconnected tools',
+    text: 'Websites, content, forms, data and operations often sit in separate places instead of working together.',
+    icon: 'merge',
+  },
+  {
+    title: 'No technical team',
+    text: 'Growing organizations need capable digital solutions without immediately hiring a full in-house team.',
+    icon: 'code',
+  },
+];
+
+export const pillars = [
+  {
+    title: 'Build',
+    icon: 'spark',
+    text: 'Create professional brands, websites and digital experiences that make your business look credible and memorable.',
+  },
+  {
+    title: 'Automate',
+    icon: 'flow',
+    text: 'Design AI-powered workflows and process automation that help teams save time and operate with more clarity.',
+  },
+  {
+    title: 'Communicate',
+    icon: 'message',
+    text: 'Shape copy, messaging and content systems that make your value easier to understand and act on.',
+  },
 ];
 
 export const solutions = [
@@ -75,77 +119,53 @@ export const solutions = [
 export const services = [
   {
     number: '01',
-    title: 'Copywriting & Strategic Communication',
-    text: 'Persuasive communication that helps brands explain, connect and convert.',
+    title: 'Web & Brand Design',
+    text: 'Professional websites, visual identities and digital experiences that help your business earn trust quickly.',
+    icon: 'window',
     capabilities: [
-      'Website copy',
-      'Brand messaging',
-      'Social media copy',
-      'Sales copy',
-      'Content strategy',
-      'Storytelling',
+      'Business websites',
+      'Landing pages',
+      'Brand identity',
+      'Responsive interfaces',
+      'Marketing materials',
     ],
   },
   {
     number: '02',
-    title: 'AI Automation',
-    text: 'Intelligent workflows designed to reduce repetitive tasks and improve operational efficiency.',
+    title: 'AI & Automation Solutions',
+    text: 'Workflow automation, AI integrations and process optimization for teams that want to work smarter.',
+    icon: 'flow',
     capabilities: [
       'Workflow automation',
       'AI agents',
       'n8n workflows',
       'Business process automation',
       'AI integrations',
-      'Data workflows',
     ],
   },
   {
     number: '03',
-    title: 'Web Development',
-    text: 'Modern responsive websites and digital experiences.',
+    title: 'Copywriting That Converts',
+    text: 'Strategic website copy, messaging and business communication that helps people understand your value.',
+    icon: 'message',
     capabilities: [
-      'Business websites',
-      'Landing pages',
-      'Web applications',
-      'Responsive interfaces',
-      'Frontend development',
-      'Backend integration',
+      'Website copy',
+      'Brand messaging',
+      'Sales copy',
+      'Content strategy',
+      'Storytelling',
     ],
   },
   {
     number: '04',
-    title: 'Software Development',
-    text: 'Technology solutions designed around real problems.',
+    title: 'Technology Consulting',
+    text: 'Technical strategy, implementation guidance and digital systems designed around real business needs.',
+    icon: 'code',
     capabilities: [
-      'Application development',
-      'API integration',
-      'Database systems',
-      'Backend systems',
-      'Custom software',
-    ],
-  },
-  {
-    number: '05',
-    title: 'Brand & Graphic Design',
-    text: 'Visual communication that makes brands recognizable and memorable.',
-    capabilities: [
-      'Brand identity',
-      'Logo design',
-      'Marketing materials',
-      'Social media graphics',
-      'Presentation design',
-      'Print design',
-    ],
-  },
-  {
-    number: '06',
-    title: 'Digital Solutions',
-    text: 'Multiple capabilities brought together into one complete solution.',
-    capabilities: [
-      'Solution planning',
-      'Creative direction',
       'Technology strategy',
+      'API integration',
       'Implementation support',
+      'Custom software',
       'Optimization',
     ],
   },
