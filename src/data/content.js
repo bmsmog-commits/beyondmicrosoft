@@ -316,7 +316,6 @@ export const socials = [
     icon: '@',
   },
 ];
-];
 
 export const footerContacts = [
   {
