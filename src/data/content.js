@@ -316,20 +316,19 @@ export const socials = [
     icon: '@',
   },
 ];
-];
 
 export const footerContacts = [
   {
     type: 'linkedin',
     label: 'LinkedIn',
     name: 'Gabriel Owolabi',
-    url: 'https://www.linkedin.com/in/gabriel-owolabi-13825b161/',
+    url: 'https://www.linkedin.com/in/gabriel-owolabi-13825b161',
   },
   {
     type: 'whatsapp',
     label: 'WhatsApp',
-    name: '+234 816 578 1570',
-    url: 'https://wa.me/2348165781570',
+    name: '+234 816 587 1570',
+    url: 'https://wa.me/2348165871570',
   },
   {
     type: 'email',
