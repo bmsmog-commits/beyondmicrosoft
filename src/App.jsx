@@ -159,8 +159,8 @@ function App() {
   }, []);
 
   const filteredProjects = useMemo(() => {
-    if (activeFilter === 'All') return projects;
-    return projects.filter((project) => project.category === activeFilter);
+    if (activeFilter === 'All') return projects.filter((project) => project.featured !== false);
+    return projects.filter((project) => project.category === activeFilter && project.featured !== false);
   }, [activeFilter]);
 
   const submitForm = (event) => {
@@ -232,7 +232,12 @@ function App() {
 
             <div className="hero-visual" aria-label="Gabriel Owolabi brand portrait panel">
               <div className="circuit-field" aria-hidden="true" />
-              <AssetImage src={personal.profile} alt="Gabriel Owolabi" className="hero-person" fallback="Gabriel Owolabi" />
+              <AssetImage
+                src={personal.headshot}
+                alt="Gabriel Owolabi, Creative Technologist and Founder of Beyond Microsoft"
+                className="hero-person"
+                fallback="Gabriel Owolabi"
+              />
               <div className="signature-card">
                 <span>Gabriel Owolabi</span>
                 <strong>Creative Technologist & Founder</strong>
@@ -300,11 +305,20 @@ function App() {
           <div className="service-grid">
             {services.map((service) => (
               <article className="service-card" key={service.title}>
-                <span className="card-number">{service.number}</span>
-                <Icon name={service.icon} />
-                <h3>{service.title}</h3>
-                <p>{service.text}</p>
-                <a href="#contact">Learn More &rarr;</a>
+                <div className="service-visual">
+                  {service.image ? (
+                    <AssetImage src={service.image} alt={service.title} className="service-card-image" fallback={service.title} />
+                  ) : (
+                    <Icon name={service.icon} />
+                  )}
+                </div>
+                <div className="service-copy">
+                  <span className="card-number">{service.number}</span>
+                  <Icon name={service.icon} />
+                  <h3>{service.title}</h3>
+                  <p>{service.text}</p>
+                  <a href="#contact">Learn More &rarr;</a>
+                </div>
               </article>
             ))}
           </div>
@@ -314,8 +328,8 @@ function App() {
           <div className="section-row">
             <SectionHeading
               eyebrow="Featured Work"
-              title="A portfolio system ready for real case studies."
-              text="Projects should communicate problem, solution and outcome. The current project data is intentionally empty until verified details are supplied."
+              title="A curated portfolio system built around real capability."
+              text="The work is intentionally selective: each project speaks to a capability, a category and a clear stage of development without inventing outcomes."
             />
             <a className="btn secondary" href="#contact">
               Start a Project
@@ -339,20 +353,42 @@ function App() {
             <div className="portfolio-grid">
               {filteredProjects.map((project) => (
                 <article className="portfolio-card" key={project.title}>
-                  <AssetImage src={project.cover} alt={project.title} className="portfolio-image" fallback="Project" />
-                  <span>{project.category}</span>
+                  <div className="project-image-wrap">
+                    <AssetImage
+                      src={project.image || project.cover}
+                      alt={project.title}
+                      className="portfolio-image"
+                      fallback={project.title.slice(0, 2).toUpperCase() || 'Project'}
+                    />
+                    <span className={`project-status status-${project.status.toLowerCase().replace(/\s+/g, '-')}`}>
+                      {project.status}
+                    </span>
+                  </div>
+                  <span className="project-category">{project.category}</span>
                   <h3>{project.title}</h3>
                   <p>{project.description}</p>
-                  <button type="button" onClick={() => setModal({ type: 'project', item: project })}>
-                    View Case Study
-                  </button>
+                  <div className="project-tech-wrap">
+                    {project.technologies?.slice(0, 3).map((tag) => (
+                      <span key={`${project.title}-${tag}`}>{tag}</span>
+                    ))}
+                  </div>
+                  <div className="portfolio-actions">
+                    <button type="button" onClick={() => setModal({ type: 'project', item: project })}>
+                      View Details
+                    </button>
+                    {project.projectUrl && (
+                      <a href={project.projectUrl} target="_blank" rel="noreferrer">
+                        Visit Project
+                      </a>
+                    )}
+                  </div>
                 </article>
               ))}
             </div>
           ) : (
             <EmptyState
-              title="No verified case studies are published yet."
-              text="Add real project names, screenshots and outcomes to `src/data/content.js` or the portfolio JSON files when they are ready."
+              title="No projects match this category yet."
+              text="The portfolio is structured to grow with verified work, future launches and additional case studies."
             />
           )}
         </section>
@@ -360,7 +396,12 @@ function App() {
         <section id="about" className="section founder-section">
           <div className="founder-grid">
             <div className="founder-image-card">
-              <AssetImage src={personal.profile} alt="Gabriel Owolabi" className="founder-image" fallback="Gabriel Owolabi" />
+              <AssetImage
+                src={personal.headshot}
+                alt="Gabriel Owolabi, Creative Technologist and Founder of Beyond Microsoft"
+                className="founder-image"
+                fallback="Gabriel Owolabi"
+              />
             </div>
             <div className="founder-copy">
               <SectionHeading eyebrow="About Me" title="I am Gabriel Owolabi." />
@@ -610,10 +651,25 @@ function App() {
               </article>
             )}
             {modal.type === 'project' && (
-              <article>
+              <article className="project-modal-content">
                 <span className="eyebrow">{modal.item.category}</span>
                 <h2>{modal.item.title}</h2>
+                <span className={`project-status status-${modal.item.status.toLowerCase().replace(/\s+/g, '-')}`}>
+                  {modal.item.status}
+                </span>
                 <p>{modal.item.description}</p>
+                {modal.item.technologies?.length > 0 && (
+                  <div className="project-tech-wrap">
+                    {modal.item.technologies.map((tag) => (
+                      <span key={`${modal.item.title}-${tag}`}>{tag}</span>
+                    ))}
+                  </div>
+                )}
+                {modal.item.projectUrl && (
+                  <a className="btn primary" href={modal.item.projectUrl} target="_blank" rel="noreferrer">
+                    Visit Project
+                  </a>
+                )}
               </article>
             )}
           </div>
