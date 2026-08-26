@@ -583,12 +583,18 @@ function App() {
             <p>Gabriel Owolabi - Creative Technologist & Founder</p>
             <p>Building brands, automating growth and creating impact through technology, design and words.</p>
             <div className="social-row">
-              {socials.map((social) => (
-                <a key={social.label} href={social.href} aria-label={social.label}>
-                  {social.icon}
-                </a>
-              ))}
-            </div>
+  {socials.map((social) => (
+    <a
+      key={social.label}
+      href={social.href}
+      aria-label={social.label}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {social.icon}
+    </a>
+  ))}
+</div>
           </div>
           <FooterColumn title="Quick Links" items={navItems.map(([label, id]) => [label, `#${id}`])} />
           <FooterColumn title="Services" items={services.map((service) => [service.title, '#services'])} />

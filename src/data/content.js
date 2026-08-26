@@ -294,12 +294,28 @@ export const articles = [
       'This article is intentionally marked as draft until Gabriel provides the finished text.',
   },
 ];
-
 export const socials = [
-  { label: 'LinkedIn', href: '#', icon: 'in' },
-  { label: 'X', href: '#', icon: 'x' },
-  { label: 'GitHub', href: '#', icon: 'gh' },
-  { label: 'Email', href: `mailto:${personal.email}`, icon: '@' },
+  {
+    label: 'LinkedIn',
+    href: 'https://www.linkedin.com/in/gabriel-owolabi-13825b161',
+    icon: 'in',
+  },
+  {
+    label: 'X',
+    href: 'https://x.com/MOGMOG619',
+    icon: 'x',
+  },
+  {
+    label: 'GitHub',
+    href: 'https://github.com/bmsmog-commits',
+    icon: 'gh',
+  },
+  {
+    label: 'Email',
+    href: `mailto:${personal.email}`,
+    icon: '@',
+  },
+];
 ];
 
 export const footerContacts = [
