@@ -327,6 +327,17 @@ img {
   align-items: center;
 }
 
+.hero-copy,
+.hero-visual {
+  /* Grid items default to a min-width equal to their content's max-content
+     size, which let the headline's intrinsic word width push past its
+     track and visually spill into the image column at ~1024-1440px
+     (the sidebar reduces available width, but the heading's vw-based
+     font-size didn't account for that). Allowing the item to shrink below
+     its content size is what makes wrapping/clamping actually take effect. */
+  min-width: 0;
+}
+
 .hero-copy h1,
 .section-heading h2,
 .cv-panel h2,
@@ -340,7 +351,14 @@ img {
 }
 
 .hero-copy h1 {
+  /* Independent (smaller) scale from the shared h2 clamp above: at the
+     shared 7vw rate, a single word like "TECHNOLOGY." rendered wider than
+     the ~500-600px column available once the sidebar is accounted for,
+     causing it to overlap the headshot column to its right. */
+  font-size: clamp(2.4rem, 5vw, 5.4rem);
   max-width: 620px;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .hero-copy h1 span {
@@ -1092,6 +1110,26 @@ blockquote span {
   color: var(--blue-700);
   grid-column: 1 / -1;
   margin: 0;
+}
+
+.form-status-success {
+  color: #16a34a;
+}
+
+.form-status-error {
+  color: #e0475a;
+}
+
+.visually-hidden {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
 }
 
 .premium-cta {

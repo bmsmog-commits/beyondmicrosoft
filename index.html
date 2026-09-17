@@ -42,6 +42,23 @@
   <body>
     <noscript>Enable JavaScript to view the Beyond Microsoft portfolio experience.</noscript>
     <div id="root"></div>
+    <!--
+      Static mirror of the React contact form (src/App.jsx) so Netlify's
+      build-time HTML scan can detect and provision the "contact" form.
+      The real, visible form is rendered by React and submitted via fetch()
+      to this same form name — this element is never shown to visitors.
+      Field names must stay in sync with the React form.
+    -->
+    <form name="contact" data-netlify="true" netlify-honeypot="bot-field" hidden>
+      <input type="hidden" name="form-name" value="contact" />
+      <input type="text" name="name" />
+      <input type="email" name="email" />
+      <input type="text" name="company" />
+      <input type="text" name="service" />
+      <input type="text" name="budget" />
+      <textarea name="message"></textarea>
+      <input type="text" name="bot-field" />
+    </form>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

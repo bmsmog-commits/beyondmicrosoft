@@ -35,7 +35,12 @@ export const navItems = [
 // filter value from `portfolioFilters`; `section` scrolls to a page section.
 export const sidebarCategories = [
   { key: 'all', label: 'All', icon: 'grid', section: 'work', filter: 'All' },
-  { key: 'ai', label: 'AI & Automation', icon: 'spark', section: 'work', filter: 'AI Automation' },
+  // Points at the AI Automation Lab section directly: the real Cross-Border
+  // Customs Compliance Workflow case study lives in `automationLab`, not in
+  // the `projects` catalog array, so filtering the work grid by category
+  // 'AI Automation' (no project uses that category) always rendered an
+  // empty result. Routing here shows the actual, existing case study.
+  { key: 'ai', label: 'AI & Automation', icon: 'spark', section: 'ai-lab', filter: 'All' },
   { key: 'web', label: 'Web', icon: 'globe', section: 'work', filter: 'Web Development' },
   { key: 'software', label: 'Software', icon: 'code', section: 'work', filter: 'Application Development' },
   { key: 'branding', label: 'Branding', icon: 'layers', section: 'work', filter: 'Brand Design' },

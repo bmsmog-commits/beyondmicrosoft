@@ -176,6 +176,7 @@ function App() {
   const [activeFilter, setActiveFilter] = useState('All');
   const [modal, setModal] = useState(null);
   const [formStatus, setFormStatus] = useState('');
+  const [formState, setFormState] = useState('idle'); // idle | submitting | success | error
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeExpertise, setActiveExpertise] = useState('Creative');
@@ -234,13 +235,42 @@ function App() {
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  const encodeFormData = (data) =>
+    Object.keys(data)
+      .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(data[key])}`)
+      .join('&');
+
   const submitForm = (event) => {
     event.preventDefault();
-    if (!event.currentTarget.checkValidity()) {
-      setFormStatus('Please complete the required fields before starting the conversation.');
+    const form = event.currentTarget;
+
+    if (!form.checkValidity()) {
+      setFormState('error');
+      setFormStatus('Please complete the required fields (name, email, service and message) before submitting.');
       return;
     }
-    setFormStatus('Your message is ready for an email/API integration. No message has been sent yet.');
+
+    if (formState === 'submitting') return; // guard against duplicate submissions
+
+    const data = new FormData(form);
+    setFormState('submitting');
+    setFormStatus('Sending your message...');
+
+    fetch('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: encodeFormData(Object.fromEntries(data.entries())),
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error(`Submission failed with status ${response.status}`);
+        setFormState('success');
+        setFormStatus("Thanks — your project request has been received. I'll get back to you shortly.");
+        form.reset();
+      })
+      .catch(() => {
+        setFormState('error');
+        setFormStatus('Something went wrong sending your message. Please try again, or reach out directly via WhatsApp or email.');
+      });
   };
 
   const SidebarNav = (
@@ -707,22 +737,35 @@ function App() {
                   ))}
                 </div>
               </div>
-              <form className="contact-form" onSubmit={submitForm}>
+              <form
+                className="contact-form"
+                name="contact"
+                method="POST"
+                data-netlify="true"
+                netlify-honeypot="bot-field"
+                onSubmit={submitForm}
+              >
+                <input type="hidden" name="form-name" value="contact" />
+                <p className="visually-hidden">
+                  <label>
+                    Don&apos;t fill this out if you&apos;re human: <input name="bot-field" />
+                  </label>
+                </p>
                 <label>
                   Name
-                  <input name="name" type="text" required placeholder="Your name" />
+                  <input name="name" type="text" required placeholder="Your name" disabled={formState === 'submitting'} />
                 </label>
                 <label>
                   Email
-                  <input name="email" type="email" required placeholder="you@example.com" />
+                  <input name="email" type="email" required placeholder="you@example.com" disabled={formState === 'submitting'} />
                 </label>
                 <label>
                   Company
-                  <input name="company" type="text" placeholder="Company or brand" />
+                  <input name="company" type="text" placeholder="Company or brand" disabled={formState === 'submitting'} />
                 </label>
                 <label>
                   Service
-                  <select name="service" required defaultValue="">
+                  <select name="service" required defaultValue="" disabled={formState === 'submitting'}>
                     <option value="" disabled>
                       Select a service
                     </option>
@@ -735,16 +778,26 @@ function App() {
                 </label>
                 <label>
                   Budget
-                  <input name="budget" type="text" placeholder="Project budget or range" />
+                  <input name="budget" type="text" placeholder="Project budget or range" disabled={formState === 'submitting'} />
                 </label>
                 <label className="full">
                   Message
-                  <textarea name="message" required rows="5" placeholder="What are you trying to build, improve or automate?" />
+                  <textarea
+                    name="message"
+                    required
+                    rows="5"
+                    placeholder="What are you trying to build, improve or automate?"
+                    disabled={formState === 'submitting'}
+                  />
                 </label>
-                <button className="btn primary full" type="submit">
-                  Start the Conversation
+                <button className="btn primary full" type="submit" disabled={formState === 'submitting'}>
+                  {formState === 'submitting' ? 'Sending...' : 'Start the Conversation'}
                 </button>
-                {formStatus && <p className="form-status" role="status">{formStatus}</p>}
+                {formStatus && (
+                  <p className={`form-status form-status-${formState}`} role="status">
+                    {formStatus}
+                  </p>
+                )}
               </form>
             </div>
           </section>
@@ -771,11 +824,20 @@ function App() {
               <p>{personal.founder} — {personal.title}</p>
               <p>Creativity, technology and intelligent solutions — built to move ideas forward.</p>
               <div className="social-row">
-                {socials.map((social) => (
-                  <a key={social.label} href={social.href} aria-label={social.label} target="_blank" rel="noopener noreferrer">
-                    <ContactIcon type={social.icon} />
-                  </a>
-                ))}
+                {socials.map((social) => {
+                  const isMailto = social.href.startsWith('mailto:');
+                  return (
+                    <a
+                      key={social.label}
+                      href={social.href}
+                      aria-label={social.label}
+                      target={isMailto ? undefined : '_blank'}
+                      rel={isMailto ? undefined : 'noopener noreferrer'}
+                    >
+                      <ContactIcon type={social.icon} />
+                    </a>
+                  );
+                })}
               </div>
             </div>
             <div className="footer-column">
