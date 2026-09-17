@@ -2047,3 +2047,74 @@ blockquote span {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---- Portfolio content integration additions ---- */
+
+.credential-file-icon {
+  align-items: center;
+  color: var(--bms-blue-light);
+  display: flex;
+  height: 40px;
+  width: 40px;
+}
+
+.testimonial-shot-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.testimonial-shot {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  cursor: pointer;
+  overflow: hidden;
+  padding: 0;
+}
+
+.testimonial-shot-image {
+  display: block;
+  height: 220px;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+  width: 100%;
+}
+
+.testimonial-shot:hover .testimonial-shot-image {
+  transform: scale(1.03);
+}
+
+.lab-links {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem 0;
+}
+
+.project-gallery-grid {
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+}
+
+.project-gallery-thumb {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+  overflow: hidden;
+  padding: 0;
+}
+
+.project-gallery-image {
+  aspect-ratio: 1;
+  display: block;
+  object-fit: cover;
+  width: 100%;
+}
+
+.project-modal-video {
+  border-radius: 8px;
+  margin: 0.75rem 0;
+  width: 100%;
+}

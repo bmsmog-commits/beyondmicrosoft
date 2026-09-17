@@ -3,7 +3,7 @@ import {
   articles,
   automationLab,
   certificates,
-  experience,
+  copywritingItems,
   expertise,
   footerContacts,
   personal,
@@ -12,8 +12,9 @@ import {
   projects,
   services,
   sidebarCategories,
+  socials,
   techStack,
-  testimonials,
+  testimonialShots,
 } from './data/content';
 
 /* -------------------------------------------------------------------- */
@@ -77,6 +78,36 @@ function ContactIcon({ type }) {
       </svg>
     );
   }
+  if (type === 'x') {
+    return (
+      <svg {...common}>
+        <path d="M18.24 2H21l-6.5 7.43L22.2 22h-6.19l-4.85-6.34L5.6 22H2.83l6.95-7.94L2 2h6.34l4.38 5.8L18.24 2Zm-1.08 18.2h1.72L7.9 3.7H6.05l11.11 16.5Z" />
+      </svg>
+    );
+  }
+  if (type === 'github') {
+    return (
+      <svg {...common}>
+        <path d="M12 .5A11.5 11.5 0 0 0 .5 12.14c0 5.16 3.29 9.53 7.86 11.08.58.11.79-.26.79-.57v-2.17c-3.2.71-3.88-1.4-3.88-1.4-.52-1.36-1.28-1.72-1.28-1.72-1.04-.73.08-.72.08-.72 1.16.08 1.77 1.22 1.77 1.22 1.02 1.79 2.68 1.27 3.34.97.1-.76.4-1.27.72-1.56-2.55-.3-5.24-1.31-5.24-5.82 0-1.29.44-2.34 1.16-3.16-.12-.3-.5-1.51.11-3.14 0 0 .95-.31 3.12 1.2a10.6 10.6 0 0 1 5.68 0c2.16-1.51 3.11-1.2 3.11-1.2.62 1.63.23 2.84.12 3.14.72.82 1.16 1.87 1.16 3.16 0 4.52-2.7 5.51-5.26 5.8.41.37.78 1.08.78 2.19v3.24c0 .31.21.69.8.57A11.51 11.51 0 0 0 23.5 12.14 11.5 11.5 0 0 0 12 .5Z" />
+      </svg>
+    );
+  }
+  if (type === 'instagram') {
+    return (
+      <svg {...common} fill="none" stroke="currentColor" strokeWidth="1.7">
+        <rect x="3" y="3" width="18" height="18" rx="5" />
+        <circle cx="12" cy="12" r="4.2" />
+        <circle cx="17.4" cy="6.6" r="1" fill="currentColor" stroke="none" />
+      </svg>
+    );
+  }
+  if (type === 'tiktok') {
+    return (
+      <svg {...common}>
+        <path d="M14.5 2h2.6c.2 1.6 1.2 3.2 2.9 3.7v2.7c-1.1 0-2.1-.3-3-.9v6.4a5.6 5.6 0 1 1-4.8-5.5v2.8a2.9 2.9 0 1 0 2.3 2.8V2Z" />
+      </svg>
+    );
+  }
   return (
     <svg {...common} fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8">
       <rect x="3" y="5" width="18" height="14" rx="2" />
@@ -128,6 +159,7 @@ function buildSearchIndex() {
   articles.forEach((a) => entries.push({ group: 'Insights', label: a.title, hint: a.category, id: 'insights' }));
   techStack.forEach((t) => entries.push({ group: 'Technology', label: t, hint: 'Tech stack', id: 'tech' }));
   certificates.forEach((c) => entries.push({ group: 'Credentials', label: c.title, hint: c.organization, id: 'credentials' }));
+  copywritingItems.forEach((c) => entries.push({ group: 'Copywriting', label: c.title, hint: c.category, id: 'copywriting' }));
   return entries;
 }
 
@@ -472,6 +504,20 @@ function App() {
                       <Icon name="arrow" />
                       <span><strong>Result</strong>{flow.result}</span>
                     </div>
+                    {(flow.gallery?.length > 0 || flow.reportUrl) && (
+                      <div className="lab-links">
+                        {flow.gallery?.length > 0 && (
+                          <button type="button" className="text-link" onClick={() => setModal({ type: 'project', item: { ...flow, category: 'AI & Automation', status: 'Completed', description: `${flow.trigger} → ${flow.logic} → ${flow.automation} → ${flow.result}` } })}>
+                            View Workflow Gallery &rarr;
+                          </button>
+                        )}
+                        {flow.reportUrl && (
+                          <a className="text-link" href={flow.reportUrl} target="_blank" rel="noreferrer">
+                            View Full Report (PDF) &rarr;
+                          </a>
+                        )}
+                      </div>
+                    )}
                   </article>
                 ))}
               </div>
@@ -549,35 +595,71 @@ function App() {
           </section>
 
           <section id="credentials" className="section proof-section">
-            <SectionHeading eyebrow="Credentials" title="CREDENTIALS" text="Certificates publish here once verified files are supplied." center />
+            <SectionHeading
+              eyebrow="Credentials"
+              title="CREDENTIALS"
+              text="Real certificate files. Organization, date and credential ID publish once independently verified."
+              center
+            />
             <div className="proof-grid">
               {certificates.length > 0 ? (
                 certificates.map((cert) => (
                   <article className="credential-card" key={cert.title} onClick={() => setModal({ type: 'certificate', item: cert })}>
-                    <AssetImage src={cert.image} alt={cert.title} className="credential-image" fallback={cert.title} />
+                    <div className="credential-file-icon"><Icon name="file" /></div>
                     <h3>{cert.title}</h3>
-                    <p>{cert.organization}</p>
-                    <small>{cert.date}</small>
+                    <p>{cert.organization || 'Organization pending verification'}</p>
+                    <small>{cert.date || 'Date pending verification'}</small>
                   </article>
                 ))
               ) : (
                 <EmptyState title="No certificates published yet." text="Add verified certificate files to /assets/certificates to populate this catalog." />
               )}
-              {testimonials.length > 0 &&
-                testimonials.map((testimonial) => (
-                  <article className="testimonial-card" key={testimonial.name}>
-                    <p>{testimonial.testimonial}</p>
-                    <strong>{testimonial.name}</strong>
-                  </article>
-                ))}
-              {experience.length > 0 &&
-                experience.map((role) => (
-                  <article className="testimonial-card" key={role.title}>
-                    <strong>{role.title}</strong>
-                    <p>{role.text}</p>
-                  </article>
-                ))}
             </div>
+          </section>
+
+          <section id="copywriting" className="section insights-section">
+            <SectionHeading
+              eyebrow="Copywriting"
+              title="COPYWRITING"
+              text="Real writing samples — website, social and content pieces, opened as documents rather than summarized."
+            />
+            <div className="insight-grid">
+              {copywritingItems.map((item) => (
+                <article className="insight-card" key={item.title}>
+                  <span>{item.category}</span>
+                  <h3>{item.title}</h3>
+                  <p>{item.description}</p>
+                  <a className="text-link" href={item.file} target="_blank" rel="noreferrer">
+                    View Document &rarr;
+                  </a>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section id="testimonials" className="section proof-section">
+            <SectionHeading
+              eyebrow="Testimonials"
+              title="WHAT PEOPLE SAY"
+              text="Real client-message screenshots, shown as supplied. Names were not visible in the source material."
+              center
+            />
+            {testimonialShots.length > 0 ? (
+              <div className="testimonial-shot-grid">
+                {testimonialShots.map((shot) => (
+                  <button
+                    type="button"
+                    className="testimonial-shot"
+                    key={shot}
+                    onClick={() => setModal({ type: 'image', item: { src: shot, title: 'Client Feedback' } })}
+                  >
+                    <AssetImage src={shot} alt="Client feedback message screenshot" className="testimonial-shot-image" fallback="Feedback" />
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <EmptyState title="No testimonials published yet." text="Verified client feedback will publish here." />
+            )}
           </section>
 
           <section id="insights" className="section insights-section">
@@ -688,6 +770,13 @@ function App() {
               <h2>{personal.brand} ({personal.shortBrand})</h2>
               <p>{personal.founder} — {personal.title}</p>
               <p>Creativity, technology and intelligent solutions — built to move ideas forward.</p>
+              <div className="social-row">
+                {socials.map((social) => (
+                  <a key={social.label} href={social.href} aria-label={social.label} target="_blank" rel="noopener noreferrer">
+                    <ContactIcon type={social.icon} />
+                  </a>
+                ))}
+              </div>
             </div>
             <div className="footer-column">
               <h3>Explore</h3>
@@ -781,15 +870,28 @@ function App() {
             )}
             {modal.type === 'certificate' && (
               <article>
-                <span className="eyebrow">{modal.item.organization}</span>
+                <span className="eyebrow">{modal.item.organization || 'Organization pending verification'}</span>
                 <h2>{modal.item.title}</h2>
-                <AssetImage src={modal.item.image} alt={modal.item.title} className="certificate-lightbox-image" fallback={modal.item.title} />
-                <p>{modal.item.date}</p>
-                {modal.item.verificationUrl && (
-                  <a className="btn primary" href={modal.item.verificationUrl} target="_blank" rel="noreferrer">
-                    Verify Credential
-                  </a>
-                )}
+                <p>{modal.item.date || 'Date pending verification'}</p>
+                <p className="empty-kicker">Credential metadata publishes once independently verified.</p>
+                <div className="button-row">
+                  {modal.item.file && (
+                    <a className="btn primary" href={modal.item.file} target="_blank" rel="noreferrer">
+                      View Certificate (PDF)
+                    </a>
+                  )}
+                  {modal.item.verificationUrl && (
+                    <a className="btn secondary" href={modal.item.verificationUrl} target="_blank" rel="noreferrer">
+                      Verify Credential
+                    </a>
+                  )}
+                </div>
+              </article>
+            )}
+            {modal.type === 'image' && (
+              <article>
+                <span className="eyebrow">{modal.item.title}</span>
+                <AssetImage src={modal.item.src} alt={modal.item.title} className="project-modal-image" fallback={modal.item.title} />
               </article>
             )}
             {modal.type === 'card' && (
@@ -833,10 +935,37 @@ function App() {
                     </div>
                   </>
                 )}
+                {modal.item.gallery?.length > 1 && (
+                  <>
+                    <h4>Project Gallery</h4>
+                    <div className="project-gallery-grid">
+                      {modal.item.gallery.map((src) => (
+                        <button
+                          type="button"
+                          className="project-gallery-thumb"
+                          key={src}
+                          onClick={() => setModal({ type: 'image', item: { src, title: modal.item.title } })}
+                        >
+                          <AssetImage src={src} alt={`${modal.item.title} gallery image`} className="project-gallery-image" fallback={modal.item.title} />
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+                {modal.item.video && (
+                  <video className="project-modal-video" src={modal.item.video} controls preload="none" />
+                )}
+                {modal.item.reportUrl && (
+                  <p>
+                    <a className="text-link" href={modal.item.reportUrl} target="_blank" rel="noreferrer">
+                      View Full Report (PDF) &rarr;
+                    </a>
+                  </p>
+                )}
                 <div className="button-row">
                   {modal.item.projectUrl && (
                     <a className="btn primary" href={modal.item.projectUrl} target="_blank" rel="noreferrer">
-                      Live Project
+                      {modal.item.status === 'In Development' ? 'View Current Build' : 'Live Project'}
                     </a>
                   )}
                   {modal.item.githubUrl && (

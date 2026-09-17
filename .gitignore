@@ -2,3 +2,9 @@ node_modules/
 build/
 .DS_Store
 npm-debug.log*
+
+# Raw source portfolio library — production assets are copied into
+# public/assets/ and committed there instead. The website does not depend
+# on this folder being present at runtime.
+BMS-Portfolio-Content/
+BMS-Portfolio-Content.zip
