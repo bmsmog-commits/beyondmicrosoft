@@ -447,11 +447,12 @@ export const projects = [
   {
     title: 'Lutapp',
     category: 'Application Development',
-    description: 'Product-oriented application work focused on usability, structure and digital execution.',
+    description: 'A software application currently in development. No screenshots or public build are available yet.',
     status: 'In Development',
     featured: false,
-    image: '/assets/design/bms-brand-system.jpg',
-    technologies: ['Application UI', 'Product Thinking', 'Frontend'],
+    // No real Lutapp screenshot exists yet — leaving `image` unset so the
+    // card shows an honest text fallback instead of an unrelated asset.
+    technologies: ['Application Development'],
     projectUrl: '',
   },
   {
