@@ -18,6 +18,7 @@ export const personal = {
   profile: '/assets/profile/gabriel-profile.jpg.jpg',
   headerImage: '/assets/profile/gabriel-profile.jpg.jpg',
   card: '/assets/design/bms-card-front.jpg',
+  cardBack: '/assets/design/bms-card-back.jpg',
 };
 
 export const navItems = [
@@ -28,6 +29,69 @@ export const navItems = [
   ['Insights', 'insights'],
   ['Contact', 'contact'],
 ];
+
+// Sidebar catalog navigation. `filter` maps a category to a project-grid
+// filter value from `portfolioFilters`; `section` scrolls to a page section.
+export const sidebarCategories = [
+  { key: 'all', label: 'All', icon: 'grid', section: 'work', filter: 'All' },
+  { key: 'ai', label: 'AI & Automation', icon: 'spark', section: 'work', filter: 'AI Automation' },
+  { key: 'web', label: 'Web', icon: 'globe', section: 'work', filter: 'Web Development' },
+  { key: 'software', label: 'Software', icon: 'code', section: 'work', filter: 'Application Development' },
+  { key: 'branding', label: 'Branding', icon: 'layers', section: 'work', filter: 'Brand Design' },
+  { key: 'design', label: 'Design', icon: 'pen', section: 'work', filter: 'Graphic Design' },
+  { key: 'copywriting', label: 'Copywriting', icon: 'message', section: 'work', filter: 'Copywriting' },
+  { key: 'marketing', label: 'Marketing', icon: 'megaphone', section: 'services', filter: 'All' },
+  { key: 'portfolio', label: 'Portfolio', icon: 'briefcase', section: 'work', filter: 'All' },
+  { key: 'digital-products', label: 'Digital Products', icon: 'cube', section: 'work', filter: 'Application Development' },
+  { key: 'insights', label: 'Insights', icon: 'file', section: 'insights', filter: 'All' },
+  { key: 'credentials', label: 'Credentials', icon: 'file', section: 'credentials', filter: 'All' },
+  { key: 'about', label: 'About', icon: 'person', section: 'about', filter: 'All' },
+  { key: 'contact', label: 'Contact', icon: 'message', section: 'contact', filter: 'All' },
+];
+
+// Flat, real technology list (no fabricated proficiency levels).
+export const techStack = [
+  'HTML',
+  'CSS',
+  'JavaScript',
+  'PHP',
+  'Python',
+  'Laravel',
+  'Node.js',
+  'Express.js',
+  'MongoDB',
+  'Git',
+  'GitHub',
+  'VS Code',
+  'n8n',
+  'OpenAI',
+  'Microsoft Copilot',
+  'ChatGPT',
+  'Photoshop',
+  'Illustrator',
+  'CorelDRAW',
+  'Canva',
+  'Figma',
+  'Microsoft 365',
+  'Google Workspace',
+];
+
+// AI Automation Lab — trigger -> logic -> automation -> result, built from
+// verified project/service data only.
+export const automationLab = [
+  {
+    title: 'Customs Compliance Workflow',
+    trigger: 'New shipment document received',
+    logic: 'AI reads and classifies the document against compliance rules',
+    automation: 'n8n routes data, flags exceptions and updates records',
+    result: 'Faster compliance checks with less manual review',
+    image: '/assets/automation/customs-compliance-flow.png',
+  },
+];
+
+// Certificates load from /assets/certificates when supplied. Kept empty
+// until verified files/details exist — never fabricated.
+export const credentialsAssetsPath = '/assets/certificates';
 
 export const trustStrip = [
   'Brand Strategy',
@@ -327,8 +391,8 @@ export const footerContacts = [
   {
     type: 'whatsapp',
     label: 'WhatsApp',
-    name: '+234 816 587 1570',
-    url: 'https://wa.me/2348165871570',
+    name: '+234 816 578 1570',
+    url: 'https://wa.me/2348165781570',
   },
   {
     type: 'email',

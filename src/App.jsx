@@ -1,72 +1,68 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   articles,
+  automationLab,
   certificates,
   experience,
   expertise,
   footerContacts,
-  navItems,
   personal,
   pillars,
   portfolioFilters,
-  problems,
   projects,
   services,
-  socials,
+  sidebarCategories,
+  techStack,
   testimonials,
-  trustStrip,
 } from './data/content';
 
-const Icon = ({ name }) => {
-  const common = {
-    fill: 'none',
-    stroke: 'currentColor',
-    strokeWidth: '1.8',
-    strokeLinecap: 'round',
-    strokeLinejoin: 'round',
-  };
+/* -------------------------------------------------------------------- */
+/* Icons                                                                  */
+/* -------------------------------------------------------------------- */
 
-  const paths = {
-    message: (
-      <>
-        <path d="M5 6.5h14v9H9l-4 3v-12Z" />
-        <path d="M8 10h8M8 13h5" />
-      </>
-    ),
-    window: (
-      <>
-        <rect x="4" y="5" width="16" height="14" rx="2" />
-        <path d="M4 9h16M8 5v4" />
-      </>
-    ),
-    flow: (
-      <>
-        <circle cx="6" cy="7" r="2" />
-        <circle cx="18" cy="7" r="2" />
-        <circle cx="12" cy="17" r="2" />
-        <path d="M8 7h8M7 9l4 6M17 9l-4 6" />
-      </>
-    ),
-    code: <path d="m9 8-4 4 4 4M15 8l4 4-4 4M13 6l-2 12" />,
-    spark: <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" />,
-    merge: <path d="M6 4v6a4 4 0 0 0 4 4h8M14 10l4 4-4 4M18 4v5" />,
-  };
-
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="icon" {...common}>
-      {paths[name] || paths.spark}
-    </svg>
-  );
+const ICONS = {
+  grid: <><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></>,
+  spark: <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" />,
+  globe: <><circle cx="12" cy="12" r="8.5" /><path d="M3.5 12h17M12 3.5c2.6 2.4 4 5.4 4 8.5s-1.4 6.1-4 8.5c-2.6-2.4-4-5.4-4-8.5s1.4-6.1 4-8.5Z" /></>,
+  code: <path d="m9 8-4 4 4 4M15 8l4 4-4 4M13 6l-2 12" />,
+  layers: <><path d="M12 3l8 4.5-8 4.5-8-4.5L12 3Z" /><path d="M4 12.5 12 17l8-4.5M4 16.5 12 21l8-4.5" /></>,
+  pen: <><path d="M4 20l1-4.2L15.8 5A2 2 0 0 1 18.6 5l.4.4A2 2 0 0 1 19 8.2L8.2 19 4 20Z" /><path d="M13.2 6.8 17.2 10.8" /></>,
+  megaphone: <><path d="M4 10v4h3l6 4V6l-6 4H4Z" /><path d="M17 9a4 4 0 0 1 0 6M20 7a7 7 0 0 1 0 10" /></>,
+  briefcase: <><rect x="3" y="7.5" width="18" height="12" rx="2" /><path d="M8 7.5V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1.5M3 12h18" /></>,
+  cube: <><path d="M12 3 4 7v10l8 4 8-4V7l-8-4Z" /><path d="M4 7l8 4 8-4M12 11v10" /></>,
+  file: <><path d="M7 3h7l5 5v13H7Z" /><path d="M14 3v5h5M9 13h6M9 16.5h6" /></>,
+  person: <><circle cx="12" cy="8" r="3.6" /><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" /></>,
+  message: <><path d="M5 6.5h14v9H9l-4 3v-12Z" /><path d="M8 10h8M8 13h5" /></>,
+  search: <><circle cx="11" cy="11" r="6.5" /><path d="m20 20-3.6-3.6" /></>,
+  sun: <><circle cx="12" cy="12" r="4" /><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" /></>,
+  moon: <path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z" />,
+  close: <path d="M6 6l12 12M18 6 6 18" />,
+  menu: <path d="M4 6h16M4 12h16M4 18h16" />,
+  arrow: <path d="M6 12h11M13 7l5 5-5 5" />,
+  flow: <><circle cx="6" cy="7" r="2" /><circle cx="18" cy="7" r="2" /><circle cx="12" cy="17" r="2" /><path d="M8 7h8M7 9l4 6M17 9l-4 6" /></>,
+  merge: <path d="M6 4v6a4 4 0 0 0 4 4h8M14 10l4 4-4 4M18 4v5" />,
+  window: <><rect x="4" y="5" width="16" height="14" rx="2" /><path d="M4 9h16M8 5v4" /></>,
 };
 
-const ContactIcon = ({ type }) => {
-  const common = {
-    fill: 'currentColor',
-    'aria-hidden': 'true',
-    className: 'footer-contact-icon',
-    viewBox: '0 0 24 24',
-  };
+function Icon({ name, className = 'icon' }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {ICONS[name] || ICONS.spark}
+    </svg>
+  );
+}
 
+function ContactIcon({ type }) {
+  const common = { fill: 'currentColor', 'aria-hidden': 'true', className: 'footer-contact-icon', viewBox: '0 0 24 24' };
   if (type === 'linkedin') {
     return (
       <svg {...common}>
@@ -74,7 +70,6 @@ const ContactIcon = ({ type }) => {
       </svg>
     );
   }
-
   if (type === 'whatsapp') {
     return (
       <svg {...common}>
@@ -82,18 +77,16 @@ const ContactIcon = ({ type }) => {
       </svg>
     );
   }
-
   return (
     <svg {...common} fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8">
       <rect x="3" y="5" width="18" height="14" rx="2" />
       <path d="m4 7 8 6 8-6" />
     </svg>
   );
-};
+}
 
 function AssetImage({ src, alt, className = '', fallback = 'BMS' }) {
   const [failed, setFailed] = useState(false);
-
   if (!src || failed) {
     return (
       <div className={`asset-fallback ${className}`} role="img" aria-label={alt}>
@@ -101,7 +94,6 @@ function AssetImage({ src, alt, className = '', fallback = 'BMS' }) {
       </div>
     );
   }
-
   return <img src={src} alt={alt} className={className} loading="lazy" onError={() => setFailed(true)} />;
 }
 
@@ -125,43 +117,90 @@ function EmptyState({ title, text }) {
   );
 }
 
+/* -------------------------------------------------------------------- */
+/* Searchable index                                                      */
+/* -------------------------------------------------------------------- */
+
+function buildSearchIndex() {
+  const entries = [];
+  projects.forEach((p) => entries.push({ group: 'Projects', label: p.title, hint: p.category, id: `project-${p.title}` }));
+  services.forEach((s) => entries.push({ group: 'Services', label: s.title, hint: s.text, id: 'services' }));
+  articles.forEach((a) => entries.push({ group: 'Insights', label: a.title, hint: a.category, id: 'insights' }));
+  techStack.forEach((t) => entries.push({ group: 'Technology', label: t, hint: 'Tech stack', id: 'tech' }));
+  certificates.forEach((c) => entries.push({ group: 'Credentials', label: c.title, hint: c.organization, id: 'credentials' }));
+  return entries;
+}
+
+const SEARCH_INDEX = buildSearchIndex();
+
+/* -------------------------------------------------------------------- */
+/* App                                                                    */
+/* -------------------------------------------------------------------- */
+
 function App() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const [activeSection, setActiveSection] = useState('home');
+  const [theme, setTheme] = useState(() => (typeof window !== 'undefined' && localStorage.getItem('bms-theme')) || 'dark');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('all');
   const [activeFilter, setActiveFilter] = useState('All');
-  const [activeExpertise, setActiveExpertise] = useState('Creative');
   const [modal, setModal] = useState(null);
   const [formStatus, setFormStatus] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [activeExpertise, setActiveExpertise] = useState('Creative');
+  const searchInputRef = useRef(null);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 18);
-      const visibleSections = navItems
-        .map(([, id]) => document.getElementById(id))
-        .filter((section) => section && section.getBoundingClientRect().top <= 140);
-      const current = visibleSections[visibleSections.length - 1];
-      if (current) setActiveSection(current.id);
-    };
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('bms-theme', theme);
+  }, [theme]);
 
-    handleScroll();
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+  useEffect(() => {
+    const handleKey = (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setSearchOpen(true);
+      }
+      if (event.key === 'Escape') {
+        setSearchOpen(false);
+        setModal(null);
+        setSidebarOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
   }, []);
 
   useEffect(() => {
-    const handleMove = (event) => {
-      document.documentElement.style.setProperty('--cursor-x', `${event.clientX}px`);
-      document.documentElement.style.setProperty('--cursor-y', `${event.clientY}px`);
-    };
-    window.addEventListener('pointermove', handleMove, { passive: true });
-    return () => window.removeEventListener('pointermove', handleMove);
-  }, []);
+    if (searchOpen) searchInputRef.current?.focus();
+  }, [searchOpen]);
 
   const filteredProjects = useMemo(() => {
-    if (activeFilter === 'All') return projects.filter((project) => project.featured !== false);
-    return projects.filter((project) => project.category === activeFilter && project.featured !== false);
+    if (activeFilter === 'All') return projects;
+    return projects.filter((project) => project.category === activeFilter);
   }, [activeFilter]);
+
+  const featuredProject = useMemo(() => projects.find((p) => p.featured) || projects[0], []);
+
+  const searchResults = useMemo(() => {
+    if (!query.trim()) return [];
+    const q = query.trim().toLowerCase();
+    return SEARCH_INDEX.filter((entry) => entry.label.toLowerCase().includes(q) || entry.hint?.toLowerCase().includes(q)).slice(0, 8);
+  }, [query]);
+
+  const goToCategory = (category) => {
+    setActiveCategory(category.key);
+    setActiveFilter(category.filter);
+    setSidebarOpen(false);
+    const el = document.getElementById(category.section);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const jumpTo = (id) => {
+    setSearchOpen(false);
+    setSidebarOpen(false);
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   const submitForm = (event) => {
     event.preventDefault();
@@ -172,482 +211,566 @@ function App() {
     setFormStatus('Your message is ready for an email/API integration. No message has been sent yet.');
   };
 
+  const SidebarNav = (
+    <nav className="sidebar-nav" aria-label="Catalog categories">
+      {sidebarCategories.map((category) => (
+        <button
+          key={category.key}
+          type="button"
+          className={`sidebar-nav-item ${activeCategory === category.key ? 'active' : ''}`}
+          onClick={() => goToCategory(category)}
+        >
+          <Icon name={category.icon} className="sidebar-icon" />
+          <span>{category.label}</span>
+        </button>
+      ))}
+    </nav>
+  );
+
   return (
-    <div className="site-shell">
+    <div className="bms-shell">
       <div className="cursor-glow" aria-hidden="true" />
-      <header className={`navbar ${scrolled ? 'scrolled' : ''}`}>
-        <a className="brand-lockup" href="#home" aria-label="Beyond Microsoft home">
-          <AssetImage src={personal.logo} alt="" className="brand-logo" fallback="BMS" />
-          <span>
-            <strong>BMS</strong>
-            <small>Beyond Microsoft</small>
+
+      {/* Desktop fixed sidebar */}
+      <aside className="bms-sidebar" aria-label="Primary navigation">
+        <a className="sidebar-brand" href="#home" onClick={() => goToCategory(sidebarCategories[0])}>
+          <AssetImage src={personal.logo} alt="" className="sidebar-logo" fallback="BMS" />
+          <span className="sidebar-brand-text">
+            <strong>{personal.brand}</strong>
+            <small>{personal.founder}</small>
+            <em>{personal.title}</em>
           </span>
         </a>
+        {SidebarNav}
+      </aside>
 
-        <button className="menu-toggle" type="button" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>
-          <span />
-          <span />
-          <span />
-        </button>
-
-        <nav className={`nav-links ${menuOpen ? 'open' : ''}`} aria-label="Main navigation">
-          {navItems.map(([label, id]) => (
-            <a
-              key={id}
-              href={`#${id}`}
-              className={activeSection === id ? 'active' : ''}
-              onClick={() => setMenuOpen(false)}
-            >
-              {label}
-            </a>
-          ))}
-        </nav>
-
-        <a className="btn primary nav-cta" href="#contact">
-          Let's Talk
+      {/* Mobile top bar */}
+      <div className="bms-mobile-bar">
+        <a className="sidebar-brand compact" href="#home">
+          <AssetImage src={personal.logo} alt="" className="sidebar-logo" fallback="BMS" />
+          <strong>{personal.shortBrand}</strong>
         </a>
-      </header>
+        <button type="button" className="icon-btn" aria-label="Open menu" aria-expanded={sidebarOpen} onClick={() => setSidebarOpen(true)}>
+          <Icon name="menu" />
+        </button>
+      </div>
 
-      <main>
-        <section id="home" className="hero section">
-          <div className="hero-grid">
-            <div className="hero-copy">
-              <span className="eyebrow">Creative Technologist & Founder</span>
-              <h1>
-                Building Brands.
-                <span>Automating Growth.</span>
-                <span>Creating Impact.</span>
-              </h1>
-              <p>{personal.intro}</p>
-              <strong className="descriptor">Gabriel Owolabi - Creative Technologist & Founder, Beyond Microsoft</strong>
-              <div className="button-row">
-                <a className="btn primary" href="#contact">
-                  Let's Talk
-                </a>
-                <a className="btn secondary" href="#work">
-                  View My Work
-                </a>
-              </div>
-            </div>
-
-            <div className="hero-visual" aria-label="Gabriel Owolabi brand portrait panel">
-              <div className="circuit-field" aria-hidden="true" />
-              <AssetImage
-                src={personal.headshot}
-                alt="Gabriel Owolabi, Creative Technologist and Founder of Beyond Microsoft"
-                className="hero-person"
-                fallback="Gabriel Owolabi"
-              />
-              <div className="signature-card">
-                <span>Gabriel Owolabi</span>
-                <strong>Creative Technologist & Founder</strong>
-                <small>Beyond Microsoft (BMS)</small>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="trust-panel" aria-label="BMS credibility and capabilities">
-          <p>Built for businesses that need stronger digital presence, clearer communication and smarter operations.</p>
-          <div className="trust-row">
-            {trustStrip.map((item) => (
-              <span key={item}>{item}</span>
-            ))}
-          </div>
-        </section>
-
-        <section className="section problem-section">
-          <SectionHeading
-            eyebrow="The Problem"
-            title="Great businesses struggle with the same digital bottlenecks."
-            text="BMS exists for founders and teams who need design, technology, automation and messaging to work as one system."
-            center
-          />
-          <div className="problem-grid">
-            {problems.map((problem) => (
-              <article className="problem-card" key={problem.title}>
-                <Icon name={problem.icon} />
-                <h3>{problem.title}</h3>
-                <p>{problem.text}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="section approach-section">
-          <SectionHeading
-            eyebrow="My Approach"
-            title="I combine creativity, technology and strategy to help you build, automate and grow."
-            center
-          />
-          <div className="pillar-grid">
-            {pillars.map((pillar) => (
-              <article className="pillar-card" key={pillar.title}>
-                <Icon name={pillar.icon} />
-                <h3>{pillar.title}</h3>
-                <p>{pillar.text}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section id="services" className="section services-section">
-          <div className="section-row">
-            <SectionHeading
-              eyebrow="What I Do"
-              title="Services that drive real business clarity."
-              text="Focused services for organizations that need a stronger brand, smarter workflows and communication that converts attention into trust."
-            />
-            <a className="btn secondary" href="#contact">
-              Discuss a Project
-            </a>
-          </div>
-          <div className="service-grid">
-            {services.map((service) => (
-              <article className="service-card" key={service.title}>
-                <div className="service-visual">
-                  {service.image ? (
-                    <AssetImage src={service.image} alt={service.title} className="service-card-image" fallback={service.title} />
-                  ) : (
-                    <Icon name={service.icon} />
-                  )}
-                </div>
-                <div className="service-copy">
-                  <span className="card-number">{service.number}</span>
-                  <Icon name={service.icon} />
-                  <h3>{service.title}</h3>
-                  <p>{service.text}</p>
-                  <a href="#contact">Learn More &rarr;</a>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section id="work" className="section work-section">
-          <div className="section-row">
-            <SectionHeading
-              eyebrow="Featured Work"
-              title="A curated portfolio system built around real capability."
-              text="The work is intentionally selective: each project speaks to a capability, a category and a clear stage of development without inventing outcomes."
-            />
-            <a className="btn secondary" href="#contact">
-              Start a Project
-            </a>
-          </div>
-
-          <div className="filter-row" aria-label="Portfolio filters">
-            {portfolioFilters.map((filter) => (
-              <button
-                key={filter}
-                type="button"
-                className={activeFilter === filter ? 'active' : ''}
-                onClick={() => setActiveFilter(filter)}
-              >
-                {filter}
+      {/* Mobile slide-out panel */}
+      {sidebarOpen && (
+        <div className="mobile-nav-overlay" role="dialog" aria-modal="true" onClick={() => setSidebarOpen(false)}>
+          <div className="mobile-nav-panel" onClick={(event) => event.stopPropagation()}>
+            <div className="mobile-nav-head">
+              <span>
+                <strong>{personal.brand}</strong>
+                <small>{personal.founder} — {personal.title}</small>
+              </span>
+              <button type="button" className="icon-btn" aria-label="Close menu" onClick={() => setSidebarOpen(false)}>
+                <Icon name="close" />
               </button>
-            ))}
+            </div>
+            {SidebarNav}
           </div>
+        </div>
+      )}
 
-          {filteredProjects.length > 0 ? (
-            <div className="portfolio-grid">
-              {filteredProjects.map((project) => (
-                <article className="portfolio-card" key={project.title}>
-                  <div className="project-image-wrap">
-                    <AssetImage
-                      src={project.image || project.cover}
-                      alt={project.title}
-                      className="portfolio-image"
-                      fallback={project.title.slice(0, 2).toUpperCase() || 'Project'}
-                    />
-                    <span className={`project-status status-${project.status.toLowerCase().replace(/\s+/g, '-')}`}>
-                      {project.status}
-                    </span>
-                  </div>
-                  <span className="project-category">{project.category}</span>
-                  <h3>{project.title}</h3>
-                  <p>{project.description}</p>
-                  <div className="project-tech-wrap">
-                    {project.technologies?.slice(0, 3).map((tag) => (
-                      <span key={`${project.title}-${tag}`}>{tag}</span>
-                    ))}
-                  </div>
-                  <div className="portfolio-actions">
-                    <button type="button" onClick={() => setModal({ type: 'project', item: project })}>
-                      View Details
-                    </button>
-                    {project.projectUrl && (
-                      <a href={project.projectUrl} target="_blank" rel="noreferrer">
-                        Visit Project
-                      </a>
-                    )}
-                  </div>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <EmptyState
-              title="No projects match this category yet."
-              text="The portfolio is structured to grow with verified work, future launches and additional case studies."
-            />
-          )}
-        </section>
+      <div className="bms-main">
+        <header className="bms-topbar">
+          <span className="topbar-title">{sidebarCategories.find((c) => c.key === activeCategory)?.label.toUpperCase() || 'ALL WORK'}</span>
+          <div className="topbar-actions">
+            <button type="button" className="icon-btn" aria-label="Search (Ctrl+K)" onClick={() => setSearchOpen(true)}>
+              <Icon name="search" />
+            </button>
+            <button
+              type="button"
+              className="icon-btn"
+              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            >
+              <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
+            </button>
+            <button type="button" className="btn secondary compact" onClick={() => jumpTo('contact')}>
+              Request Project
+            </button>
+            <a className="btn primary compact" href="#contact" onClick={() => jumpTo('contact')}>
+              Contact
+            </a>
+          </div>
+        </header>
 
-        <section id="about" className="section founder-section">
-          <div className="founder-grid">
-            <div className="founder-image-card">
-              <AssetImage
-                src={personal.headshot}
-                alt="Gabriel Owolabi, Creative Technologist and Founder of Beyond Microsoft"
-                className="founder-image"
-                fallback="Gabriel Owolabi"
-              />
-            </div>
-            <div className="founder-copy">
-              <SectionHeading eyebrow="About Me" title="I am Gabriel Owolabi." />
-              <p>
-                Creative Technologist and Founder of Beyond Microsoft (BMS). I help businesses and organizations grow
-                through the power of design, technology, automation and words.
-              </p>
-              <ul className="check-list">
-                <li>Creative Technologist</li>
-                <li>AI Automation Specialist</li>
-                <li>Web Developer</li>
-                <li>Graphic & Brand Designer</li>
-                <li>Copywriter</li>
-              </ul>
-              <div className="button-row">
-                <a className="btn primary" href={personal.cvPath} target="_blank" rel="noreferrer">
-                  View CV
-                </a>
-                <a className="text-link" href="#contact">
-                  More About Me &rarr;
-                </a>
+        <main>
+          <section id="home" className="hero section">
+            <div className="hero-grid">
+              <div className="hero-copy">
+                <span className="eyebrow">Creative Technologist</span>
+                <h1>
+                  CREATIVITY
+                  <span>MEETS</span>
+                  <span>TECHNOLOGY.</span>
+                </h1>
+                <p>{personal.intro}</p>
+                <strong className="descriptor">{personal.founder} — {personal.title}, {personal.brand}</strong>
+                <div className="button-row">
+                  <button className="btn primary" type="button" onClick={() => jumpTo('work')}>
+                    Explore Work
+                  </button>
+                  <button className="btn secondary" type="button" onClick={() => jumpTo('contact')}>
+                    Let's Work Together
+                  </button>
+                  <a className="btn ghost" href={personal.cvPath} target="_blank" rel="noreferrer">
+                    Download CV
+                  </a>
+                </div>
+              </div>
+
+              <div className="hero-visual" aria-label="Gabriel Owolabi brand portrait panel">
+                <div className="circuit-field" aria-hidden="true" />
+                <AssetImage
+                  src={personal.headshot}
+                  alt="Gabriel Owolabi, Creative Technologist and Founder of Beyond Microsoft"
+                  className="hero-person"
+                  fallback="Gabriel Owolabi"
+                />
+                <div className="signature-card">
+                  <span>{personal.founder}</span>
+                  <strong>{personal.title}</strong>
+                  <small>{personal.brand} ({personal.shortBrand})</small>
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <section className="section capability-section">
-          <SectionHeading
-            eyebrow="Capabilities"
-            title="Technical and creative capabilities, shaped around outcomes."
-            center
-          />
-          <div className="capability-layout">
-            <div className="capability-tabs" role="tablist" aria-label="Capability categories">
-              {Object.keys(expertise).map((category) => (
+          <section className="section catalog-intro">
+            <SectionHeading
+              eyebrow="Selected Work"
+              title="SELECTED WORK"
+              text={`A curated collection of digital experiences, technology projects, creative work and experiments from ${personal.brand}.`}
+            />
+            <span className="catalog-count">{projects.length} entries in the catalog</span>
+          </section>
+
+          {featuredProject && (
+            <section className="section featured-section">
+              <SectionHeading eyebrow="Featured" title="FEATURED" />
+              <article className="featured-card" onClick={() => setModal({ type: 'project', item: featuredProject })}>
+                <AssetImage
+                  src={featuredProject.image || featuredProject.cover}
+                  alt={featuredProject.title}
+                  className="featured-image"
+                  fallback={featuredProject.title}
+                />
+                <div className="featured-copy">
+                  <span className="project-category">{featuredProject.category}</span>
+                  <h3>{featuredProject.title}</h3>
+                  <p>{featuredProject.description}</p>
+                  <span className="card-arrow"><Icon name="arrow" /></span>
+                </div>
+              </article>
+            </section>
+          )}
+
+          <section id="work" className="section work-section">
+            <div className="filter-row" aria-label="Portfolio filters">
+              {portfolioFilters.map((filter) => (
                 <button
-                  key={category}
+                  key={filter}
                   type="button"
-                  className={activeExpertise === category ? 'active' : ''}
-                  onClick={() => setActiveExpertise(category)}
+                  className={activeFilter === filter ? 'active' : ''}
+                  onClick={() => setActiveFilter(filter)}
                 >
-                  {category}
+                  {filter}
                 </button>
               ))}
             </div>
-            <div className="capability-cloud" role="tabpanel">
-              {expertise[activeExpertise].map((skill) => (
-                <span key={skill}>{skill}</span>
-              ))}
-            </div>
-          </div>
-        </section>
 
-        <section className="section proof-section">
-          <SectionHeading eyebrow="Proof" title="Testimonials and credentials stay honest." center />
-          <div className="proof-grid">
-            {testimonials.length > 0 ? (
-              testimonials.map((testimonial) => (
-                <article className="testimonial-card" key={testimonial.name}>
-                  <p>{testimonial.testimonial}</p>
-                  <strong>{testimonial.name}</strong>
-                </article>
-              ))
+            {filteredProjects.length > 0 ? (
+              <div className="portfolio-grid">
+                {filteredProjects.map((project, index) => (
+                  <article
+                    className={`portfolio-card size-${project.size || (index % 5 === 0 ? 'wide' : 'standard')}`}
+                    key={project.title}
+                    onClick={() => setModal({ type: 'project', item: project })}
+                  >
+                    <div className="project-image-wrap">
+                      <AssetImage
+                        src={project.image || project.cover}
+                        alt={project.title}
+                        className="portfolio-image"
+                        fallback={project.title.slice(0, 2).toUpperCase() || 'Project'}
+                      />
+                      <span className={`project-status status-${project.status.toLowerCase().replace(/\s+/g, '-')}`}>
+                        {project.status}
+                      </span>
+                      <span className="card-overlay-arrow"><Icon name="arrow" /></span>
+                    </div>
+                    <span className="project-category">{project.category}</span>
+                    <h3>{project.title}</h3>
+                    <p>{project.description}</p>
+                    <div className="project-tech-wrap">
+                      {project.technologies?.slice(0, 3).map((tag) => (
+                        <span key={`${project.title}-${tag}`}>{tag}</span>
+                      ))}
+                    </div>
+                  </article>
+                ))}
+              </div>
             ) : (
               <EmptyState
-                title="No verified testimonials are available yet."
-                text="This section is structured for genuine client feedback only. Nothing has been invented."
+                title="No projects match this category yet."
+                text="The catalog is structured to grow with verified work, future launches and additional case studies."
               />
             )}
-            {certificates.length > 0 || experience.length > 0 ? (
-              <EmptyState title="Verified credentials can publish here." text="Add verified certificate or experience entries to the data file." />
+          </section>
+
+          <section id="services" className="section services-section">
+            <SectionHeading
+              eyebrow="What I Do"
+              title="Capabilities across creativity and technology."
+              text="Focused disciplines that come together to build, automate and communicate for a business."
+            />
+            <div className="service-grid">
+              {services.map((service) => (
+                <article className="service-card" key={service.title}>
+                  <div className="service-visual">
+                    {service.image ? (
+                      <AssetImage src={service.image} alt={service.title} className="service-card-image" fallback={service.title} />
+                    ) : (
+                      <Icon name={service.icon} />
+                    )}
+                  </div>
+                  <div className="service-copy">
+                    <span className="card-number">{service.number}</span>
+                    <Icon name={service.icon} />
+                    <h3>{service.title}</h3>
+                    <p>{service.text}</p>
+                    <button className="text-link" type="button" onClick={() => jumpTo('contact')}>
+                      Learn More &rarr;
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section id="ai-lab" className="section lab-section">
+            <SectionHeading
+              eyebrow="AI Automation Lab"
+              title="AI & AUTOMATION LAB"
+              text="Verified automation systems, shown as trigger, logic, automation and result — not a generic diagram."
+            />
+            {automationLab.length > 0 ? (
+              <div className="lab-grid">
+                {automationLab.map((flow) => (
+                  <article className="lab-card" key={flow.title}>
+                    <AssetImage src={flow.image} alt={flow.title} className="lab-image" fallback={flow.title} />
+                    <h3>{flow.title}</h3>
+                    <div className="lab-flow">
+                      <span><strong>Trigger</strong>{flow.trigger}</span>
+                      <Icon name="arrow" />
+                      <span><strong>AI / Logic</strong>{flow.logic}</span>
+                      <Icon name="arrow" />
+                      <span><strong>Automation</strong>{flow.automation}</span>
+                      <Icon name="arrow" />
+                      <span><strong>Result</strong>{flow.result}</span>
+                    </div>
+                  </article>
+                ))}
+              </div>
             ) : (
-              <EmptyState title="Credential space preserved." text="The site will display certificates, experience and associations once verified details are supplied." />
+              <EmptyState title="Automation case studies are being prepared." text="Verified n8n and AI workflow builds will publish here." />
             )}
-          </div>
-        </section>
+          </section>
 
-        <section id="insights" className="section insights-section">
-          <SectionHeading
-            eyebrow="Insights"
-            title="Thinking beyond the build."
-            text="Ideas and observations from the intersection of technology, creativity, AI, communication and professional growth."
-          />
-          <div className="insight-grid">
-            {articles.map((article) => (
-              <article className="insight-card" key={article.slug}>
-                <span>{article.category}</span>
-                <small>{article.date}</small>
-                <h3>{article.title}</h3>
-                <p>{article.excerpt}</p>
-                <button className="text-link" type="button" onClick={() => setModal({ type: 'article', item: article })}>
-                  Read More &rarr;
+          <section id="about" className="section founder-section">
+            <div className="founder-grid">
+              <div className="founder-image-card">
+                <AssetImage
+                  src={personal.headshot}
+                  alt="Gabriel Owolabi, Creative Technologist and Founder of Beyond Microsoft"
+                  className="founder-image"
+                  fallback="Gabriel Owolabi"
+                />
+              </div>
+              <div className="founder-copy">
+                <SectionHeading eyebrow="About" title={`${personal.founder.toUpperCase()}`} text="CREATIVE TECHNOLOGIST" />
+                <p>
+                  {personal.founder} is a Creative Technologist working at the intersection of creativity and
+                  technology. He combines copywriting, software development, AI automation, web development and
+                  graphic design to transform ideas into practical digital solutions.
+                </p>
+                <p>He enjoys simplifying complex problems and turning them into useful experiences.</p>
+                <blockquote className="philosophy-quote">&ldquo;{personal.philosophy}&rdquo;</blockquote>
+                <div className="button-row">
+                  <a className="btn primary" href={personal.cvPath} target="_blank" rel="noreferrer">
+                    View CV
+                  </a>
+                  <a className="btn secondary" href={personal.cvPath} download>
+                    Download CV
+                  </a>
+                  {personal.card && (
+                    <button className="btn ghost" type="button" onClick={() => setModal({ type: 'card' })}>
+                      View Card
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="tech" className="section tech-section">
+            <SectionHeading eyebrow="Tech Stack" title="TECH STACK" text="Tools and technologies actually used in the work above." center />
+            <div className="tech-grid">
+              {techStack.map((tool) => (
+                <span className="tech-tile" key={tool}>{tool}</span>
+              ))}
+            </div>
+          </section>
+
+          <section className="section capability-section">
+            <SectionHeading eyebrow="Capabilities" title="Technical and creative capabilities, shaped around outcomes." center />
+            <div className="capability-layout">
+              <div className="capability-tabs" role="tablist" aria-label="Capability categories">
+                {Object.keys(expertise).map((category) => (
+                  <button
+                    key={category}
+                    type="button"
+                    className={activeExpertise === category ? 'active' : ''}
+                    onClick={() => setActiveExpertise(category)}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+              <div className="capability-cloud" role="tabpanel">
+                {expertise[activeExpertise].map((skill) => (
+                  <span key={skill}>{skill}</span>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section id="credentials" className="section proof-section">
+            <SectionHeading eyebrow="Credentials" title="CREDENTIALS" text="Certificates publish here once verified files are supplied." center />
+            <div className="proof-grid">
+              {certificates.length > 0 ? (
+                certificates.map((cert) => (
+                  <article className="credential-card" key={cert.title} onClick={() => setModal({ type: 'certificate', item: cert })}>
+                    <AssetImage src={cert.image} alt={cert.title} className="credential-image" fallback={cert.title} />
+                    <h3>{cert.title}</h3>
+                    <p>{cert.organization}</p>
+                    <small>{cert.date}</small>
+                  </article>
+                ))
+              ) : (
+                <EmptyState title="No certificates published yet." text="Add verified certificate files to /assets/certificates to populate this catalog." />
+              )}
+              {testimonials.length > 0 &&
+                testimonials.map((testimonial) => (
+                  <article className="testimonial-card" key={testimonial.name}>
+                    <p>{testimonial.testimonial}</p>
+                    <strong>{testimonial.name}</strong>
+                  </article>
+                ))}
+              {experience.length > 0 &&
+                experience.map((role) => (
+                  <article className="testimonial-card" key={role.title}>
+                    <strong>{role.title}</strong>
+                    <p>{role.text}</p>
+                  </article>
+                ))}
+            </div>
+          </section>
+
+          <section id="insights" className="section insights-section">
+            <SectionHeading
+              eyebrow="Insights"
+              title="Thinking beyond the build."
+              text="Ideas and observations from the intersection of technology, creativity, AI, communication and professional growth."
+            />
+            <div className="insight-grid">
+              {articles.map((article) => (
+                <article className="insight-card" key={article.slug}>
+                  <span>{article.category}</span>
+                  <small>{article.date}</small>
+                  <h3>{article.title}</h3>
+                  <p>{article.excerpt}</p>
+                  <small className="read-time">{article.readTime}</small>
+                  <button className="text-link" type="button" onClick={() => setModal({ type: 'article', item: article })}>
+                    Read More &rarr;
+                  </button>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section id="contact" className="section contact-section">
+            <div className="contact-layout">
+              <div>
+                <SectionHeading
+                  eyebrow="Contact"
+                  title="HAVE SOMETHING WORTH BUILDING?"
+                  text="Tell me what you're trying to build, improve or automate."
+                />
+                <div className="contact-links">
+                  {footerContacts.map((contact) => (
+                    <a
+                      key={contact.type}
+                      href={contact.url}
+                      target={contact.type === 'linkedin' || contact.type === 'whatsapp' ? '_blank' : undefined}
+                      rel={contact.type === 'linkedin' || contact.type === 'whatsapp' ? 'noreferrer' : undefined}
+                      aria-label={`${contact.label}: ${contact.name}`}
+                    >
+                      <ContactIcon type={contact.type} />
+                      <span>{contact.name}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+              <form className="contact-form" onSubmit={submitForm}>
+                <label>
+                  Name
+                  <input name="name" type="text" required placeholder="Your name" />
+                </label>
+                <label>
+                  Email
+                  <input name="email" type="email" required placeholder="you@example.com" />
+                </label>
+                <label>
+                  Company
+                  <input name="company" type="text" placeholder="Company or brand" />
+                </label>
+                <label>
+                  Service
+                  <select name="service" required defaultValue="">
+                    <option value="" disabled>
+                      Select a service
+                    </option>
+                    {services.map((service) => (
+                      <option key={service.title}>{service.title}</option>
+                    ))}
+                    <option>Collaboration</option>
+                    <option>Other</option>
+                  </select>
+                </label>
+                <label>
+                  Budget
+                  <input name="budget" type="text" placeholder="Project budget or range" />
+                </label>
+                <label className="full">
+                  Message
+                  <textarea name="message" required rows="5" placeholder="What are you trying to build, improve or automate?" />
+                </label>
+                <button className="btn primary full" type="submit">
+                  Start the Conversation
                 </button>
-              </article>
-            ))}
-          </div>
-        </section>
+                {formStatus && <p className="form-status" role="status">{formStatus}</p>}
+              </form>
+            </div>
+          </section>
 
-        <section id="contact" className="section contact-section">
-          <div className="contact-layout">
-            <div>
-              <SectionHeading
-                eyebrow="Contact"
-                title="Ready to build, automate and grow your brand?"
-                text="Let's create digital solutions that make your business look better, work smarter and communicate with impact."
-              />
-              <div className="contact-links">
+          <section className="premium-cta">
+            <h2>READY TO BUILD SOMETHING REMARKABLE?</h2>
+            <p>Have an idea, problem or process that could be better? Let's turn it into something useful.</p>
+            <div className="button-row center-row">
+              <button className="btn light" type="button" onClick={() => jumpTo('contact')}>
+                Start a Conversation
+              </button>
+              <button className="btn ghost" type="button" onClick={() => jumpTo('work')}>
+                Explore the Work
+              </button>
+            </div>
+          </section>
+        </main>
+
+        <footer className="footer">
+          <div className="footer-grid compact">
+            <div className="footer-brand">
+              <AssetImage src={personal.logo} alt="" className="footer-logo" fallback="BMS" />
+              <h2>{personal.brand} ({personal.shortBrand})</h2>
+              <p>{personal.founder} — {personal.title}</p>
+              <p>Creativity, technology and intelligent solutions — built to move ideas forward.</p>
+            </div>
+            <div className="footer-column">
+              <h3>Explore</h3>
+              <button className="text-link" type="button" onClick={() => jumpTo('work')}>Work</button>
+              <button className="text-link" type="button" onClick={() => jumpTo('about')}>About</button>
+              <button className="text-link" type="button" onClick={() => jumpTo('services')}>Services</button>
+              <button className="text-link" type="button" onClick={() => jumpTo('insights')}>Insights</button>
+              <button className="text-link" type="button" onClick={() => jumpTo('contact')}>Contact</button>
+            </div>
+            <div className="footer-column footer-contact-column">
+              <h3>Connect</h3>
+              <div className="footer-contact-list">
                 {footerContacts.map((contact) => (
                   <a
                     key={contact.type}
+                    className="footer-contact-item"
                     href={contact.url}
-                    target={contact.type === 'linkedin' ? '_blank' : undefined}
-                    rel={contact.type === 'linkedin' ? 'noreferrer' : undefined}
+                    target={contact.type === 'linkedin' || contact.type === 'whatsapp' ? '_blank' : undefined}
+                    rel={contact.type === 'linkedin' || contact.type === 'whatsapp' ? 'noreferrer' : undefined}
                     aria-label={`${contact.label}: ${contact.name}`}
                   >
-                    <ContactIcon type={contact.type} />
-                    <span>{contact.name}</span>
+                    <span className="footer-contact-icon-wrap">
+                      <ContactIcon type={contact.type} />
+                    </span>
+                    <span>
+                      <small>{contact.label}</small>
+                      <strong>{contact.name}</strong>
+                    </span>
                   </a>
                 ))}
               </div>
             </div>
-            <form className="contact-form" onSubmit={submitForm}>
-              <label>
-                Name
-                <input name="name" type="text" required placeholder="Your name" />
-              </label>
-              <label>
-                Email
-                <input name="email" type="email" required placeholder="you@example.com" />
-              </label>
-              <label>
-                Service
-                <select name="service" required defaultValue="">
-                  <option value="" disabled>
-                    Select a service
-                  </option>
-                  {services.map((service) => (
-                    <option key={service.title}>{service.title}</option>
-                  ))}
-                  <option>Collaboration</option>
-                  <option>Other</option>
-                </select>
-              </label>
-              <label>
-                Budget
-                <input name="budget" type="text" placeholder="Project budget or range" />
-              </label>
-              <label className="full">
-                Message
-                <textarea name="message" required rows="5" placeholder="What are you trying to build, improve or automate?" />
-              </label>
-              <button className="btn primary full" type="submit">
-                Let's Work Together
+          </div>
+          <div className="footer-bottom">
+            <span>© 2026 {personal.brand} ({personal.shortBrand}). All rights reserved.</span>
+            <span>Built with creativity + technology.</span>
+          </div>
+        </footer>
+      </div>
+
+      {searchOpen && (
+        <div className="search-overlay" role="dialog" aria-modal="true" onClick={() => setSearchOpen(false)}>
+          <div className="search-panel" onClick={(event) => event.stopPropagation()}>
+            <div className="search-input-row">
+              <Icon name="search" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Search projects, services, insights, technology..."
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+              />
+              <button type="button" className="icon-btn" aria-label="Close search" onClick={() => setSearchOpen(false)}>
+                <Icon name="close" />
               </button>
-              {formStatus && <p className="form-status" role="status">{formStatus}</p>}
-            </form>
-          </div>
-        </section>
-
-        <section className="premium-cta">
-          <h2>Ready to build, automate and grow your brand?</h2>
-          <p>Bring your website, brand, automation and messaging into one clear digital system.</p>
-          <div className="button-row center-row">
-            <a className="btn light" href="#contact">
-              Let's Work Together
-            </a>
-            <a className="btn ghost" href="#work">
-              View My Work
-            </a>
-          </div>
-        </section>
-      </main>
-
-      <footer className="footer">
-        <div className="footer-grid">
-          <div className="footer-brand">
-            <AssetImage src={personal.logo} alt="" className="footer-logo" fallback="BMS" />
-            <h2>Beyond Microsoft (BMS)</h2>
-            <p>Gabriel Owolabi - Creative Technologist & Founder</p>
-            <p>Building brands, automating growth and creating impact through technology, design and words.</p>
-            <div className="social-row">
-  {socials.map((social) => (
-    <a
-      key={social.label}
-      href={social.href}
-      aria-label={social.label}
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      {social.icon}
-    </a>
-  ))}
-</div>
-          </div>
-          <FooterColumn title="Quick Links" items={navItems.map(([label, id]) => [label, `#${id}`])} />
-          <FooterColumn title="Services" items={services.map((service) => [service.title, '#services'])} />
-          <FooterColumn
-            title="Resources"
-            items={[
-              ['My CV', personal.cvPath],
-              ['Case Studies', '#work'],
-              ['Insights', '#insights'],
-              ['Contact', '#contact'],
-            ]}
-          />
-          <div className="footer-column footer-contact-column">
-            <h3>Connect With Me</h3>
-            <div className="footer-contact-list">
-              {footerContacts.map((contact) => (
-                <a
-                  key={contact.type}
-                  className="footer-contact-item"
-                  href={contact.url}
-                  target={contact.type === 'linkedin' ? '_blank' : undefined}
-                  rel={contact.type === 'linkedin' ? 'noreferrer' : undefined}
-                  aria-label={`${contact.label}: ${contact.name}`}
-                >
-                  <span className="footer-contact-icon-wrap">
-                    <ContactIcon type={contact.type} />
-                  </span>
-                  <span>
-                    <small>{contact.label}</small>
-                    <strong>{contact.name}</strong>
-                  </span>
-                </a>
+            </div>
+            <div className="search-results">
+              {query.trim() && searchResults.length === 0 && <p className="search-empty">No matches yet.</p>}
+              {searchResults.map((result) => (
+                <button key={`${result.group}-${result.label}`} type="button" className="search-result" onClick={() => jumpTo(result.id.startsWith('project-') ? 'work' : result.id)}>
+                  <span className="search-result-group">{result.group}</span>
+                  <span className="search-result-label">{result.label}</span>
+                </button>
               ))}
+              {!query.trim() && (
+                <div className="search-shortcuts">
+                  <button type="button" onClick={() => jumpTo('work')}>Go to Work</button>
+                  <button type="button" onClick={() => jumpTo('about')}>Go to About</button>
+                  <button type="button" onClick={() => jumpTo('services')}>Go to Services</button>
+                  <button type="button" onClick={() => jumpTo('contact')}>Go to Contact</button>
+                  <a href={personal.cvPath} target="_blank" rel="noreferrer">Open CV</a>
+                </div>
+              )}
             </div>
           </div>
-          <div className="footer-column">
-            <h3>Location</h3>
-            <p>Available for Nigerian and international projects.</p>
-            <p>Remote-first creative technology support for founders, teams and organizations.</p>
-          </div>
         </div>
-        <div className="footer-bottom">
-          <span>© 2026 Beyond Microsoft (BMS). All rights reserved.</span>
-          <span>Gabriel Owolabi - Creative Technologist & Founder</span>
-          <span>Privacy Policy | Terms of Use</span>
-        </div>
-      </footer>
+      )}
 
       {modal && (
         <div className="modal-backdrop" role="dialog" aria-modal="true" onClick={() => setModal(null)}>
           <div className="modal-panel" onClick={(event) => event.stopPropagation()}>
             <button className="modal-close" type="button" onClick={() => setModal(null)} aria-label="Close dialog">
-              x
+              <Icon name="close" />
             </button>
             {modal.type === 'article' && (
               <article>
@@ -656,44 +779,80 @@ function App() {
                 <p>{modal.item.body}</p>
               </article>
             )}
+            {modal.type === 'certificate' && (
+              <article>
+                <span className="eyebrow">{modal.item.organization}</span>
+                <h2>{modal.item.title}</h2>
+                <AssetImage src={modal.item.image} alt={modal.item.title} className="certificate-lightbox-image" fallback={modal.item.title} />
+                <p>{modal.item.date}</p>
+                {modal.item.verificationUrl && (
+                  <a className="btn primary" href={modal.item.verificationUrl} target="_blank" rel="noreferrer">
+                    Verify Credential
+                  </a>
+                )}
+              </article>
+            )}
+            {modal.type === 'card' && (
+              <article className="project-modal-content">
+                <span className="eyebrow">{personal.brand}</span>
+                <h2>Digital Identity Card</h2>
+                <div className="card-lightbox-grid">
+                  <AssetImage src={personal.card} alt="BMS complimentary card — front" className="card-lightbox-image" fallback="Card front" />
+                  {personal.cardBack && (
+                    <AssetImage src={personal.cardBack} alt="BMS complimentary card — back" className="card-lightbox-image" fallback="Card back" />
+                  )}
+                </div>
+              </article>
+            )}
             {modal.type === 'project' && (
               <article className="project-modal-content">
-                <span className="eyebrow">{modal.item.category}</span>
+                <span className="eyebrow">{modal.item.category} · {modal.item.year || ''}</span>
                 <h2>{modal.item.title}</h2>
                 <span className={`project-status status-${modal.item.status.toLowerCase().replace(/\s+/g, '-')}`}>
                   {modal.item.status}
                 </span>
+                <AssetImage
+                  src={modal.item.image || modal.item.cover}
+                  alt={modal.item.title}
+                  className="project-modal-image"
+                  fallback={modal.item.title}
+                />
+                <h4>Overview</h4>
                 <p>{modal.item.description}</p>
+                {modal.item.problem && (<><h4>The Challenge</h4><p>{modal.item.problem}</p></>)}
+                {modal.item.strategy && (<><h4>The Approach</h4><p>{modal.item.strategy}</p></>)}
+                {modal.item.solution && (<><h4>The Solution</h4><p>{modal.item.solution}</p></>)}
+                {modal.item.result && (<><h4>Result</h4><p>{modal.item.result}</p></>)}
                 {modal.item.technologies?.length > 0 && (
-                  <div className="project-tech-wrap">
-                    {modal.item.technologies.map((tag) => (
-                      <span key={`${modal.item.title}-${tag}`}>{tag}</span>
-                    ))}
-                  </div>
+                  <>
+                    <h4>Technology</h4>
+                    <div className="project-tech-wrap">
+                      {modal.item.technologies.map((tag) => (
+                        <span key={`${modal.item.title}-${tag}`}>{tag}</span>
+                      ))}
+                    </div>
+                  </>
                 )}
-                {modal.item.projectUrl && (
-                  <a className="btn primary" href={modal.item.projectUrl} target="_blank" rel="noreferrer">
-                    Visit Project
-                  </a>
-                )}
+                <div className="button-row">
+                  {modal.item.projectUrl && (
+                    <a className="btn primary" href={modal.item.projectUrl} target="_blank" rel="noreferrer">
+                      Live Project
+                    </a>
+                  )}
+                  {modal.item.githubUrl && (
+                    <a className="btn secondary" href={modal.item.githubUrl} target="_blank" rel="noreferrer">
+                      GitHub
+                    </a>
+                  )}
+                  <button className="btn ghost" type="button" onClick={() => setModal(null)}>
+                    Back to Catalog
+                  </button>
+                </div>
               </article>
             )}
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function FooterColumn({ title, items }) {
-  return (
-    <div className="footer-column">
-      <h3>{title}</h3>
-      {items.map(([label, href]) => (
-        <a key={`${title}-${label}`} href={href}>
-          {label}
-        </a>
-      ))}
     </div>
   );
 }
