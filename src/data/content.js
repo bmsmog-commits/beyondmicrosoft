@@ -3,23 +3,40 @@ export const personal = {
   shortBrand: 'BMS',
   founder: 'Gabriel Owolabi',
   title: 'Creative Technologist',
-  positioning: 'Building Brands. Automating Growth. Creating Impact.',
+  positioning: 'Elevating Standards. Enhancing Quality.',
+  supportingPositioning: 'Where Creativity Meets Technology.',
   descriptor:
     'Creative Technologist & Founder of Beyond Microsoft',
   intro:
-    'Beyond Microsoft helps businesses build better digital brands, automate repetitive processes, and communicate their value clearly through technology, design and strategic content.',
+    "I'm Gabriel Owolabi, a Creative Technologist and the founder of Beyond Microsoft (BMS). I combine an engineering background with creativity and technology to build brands, digital experiences, software solutions and automation systems that create real value.",
+  founderBio: [
+    'I’m Gabriel Owolabi, a Creative Technologist and the founder of Beyond Microsoft (BMS).',
+    'My journey didn’t start in technology. I come from an engineering background, with hands-on experience in metal fabrication and construction. Working with my hands taught me precision, problem-solving, patience, creativity, and the importance of turning ideas into something real.',
+    'Over time, that same mindset led me into technology. I began exploring graphic design, branding, web development, software engineering, programming, copywriting, and AI automation. What started as curiosity gradually became a deeper passion for using technology to solve problems, build useful products, and help businesses grow.',
+    'Today, through Beyond Microsoft, I combine creativity, engineering thinking, and technology to build brands, digital experiences, software solutions, and automation systems that create real value.',
+    'I believe my background is not something I left behind—it is part of what shaped the way I build today.',
+    'From metal fabrication to digital products, the principle remains the same: take an idea, understand the problem, build with precision, and create something that works.',
+  ],
   philosophy:
     'Technology should not make things more complicated. It should make possibilities simpler.',
+  // contact@beyondmicrosoft.com is the intended long-term business address,
+  // but that inbox isn't live yet — using the working Gmail until it is.
   email: 'beyondmsoft@gmail.com',
   personalEmail: 'dammmy619@gmail.com',
   cvPath: '/assets/documents/gabriel-cv.pdf',
-  logo: '/assets/brand/lugooo.jpg',
-  logoSvg: '/assets/brand/lugooo.jpg',
+  // Official transparent BMS mark, used for the sidebar/mobile header logo
+  // (site-wide "home" link) and the favicon set generated from it.
+  logo: '/assets/brand/bms-logo-transparent.png',
+  logoSvg: '/assets/brand/bms-logo-transparent.png',
   headshot: '/assets/profile/gabriel-profile.jpg.jpg',
   profile: '/assets/profile/gabriel-profile.jpg.jpg',
   headerImage: '/assets/profile/gabriel-profile.jpg.jpg',
-  card: '/assets/design/bms-card-front.jpg',
-  cardBack: '/assets/design/bms-card-back.jpg',
+  // Official 2026 physical brand identity artwork (complimentary card +
+  // sticker), also reused as the Design/Copywriting service card imagery
+  // below — the older /assets/design/bms-*.jpg renders are retired.
+  card: '/assets/branding/bms-card-front.jpg',
+  cardBack: '/assets/branding/bms-card-back.jpg',
+  sticker: '/assets/branding/bms-sticker.jpg',
 };
 
 export const navItems = [
@@ -35,12 +52,10 @@ export const navItems = [
 // filter value from `portfolioFilters`; `section` scrolls to a page section.
 export const sidebarCategories = [
   { key: 'all', label: 'All', icon: 'grid', section: 'work', filter: 'All' },
-  // Points at the AI Automation Lab section directly: the real Cross-Border
-  // Customs Compliance Workflow case study lives in `automationLab`, not in
-  // the `projects` catalog array, so filtering the work grid by category
-  // 'AI Automation' (no project uses that category) always rendered an
-  // empty result. Routing here shows the actual, existing case study.
-  { key: 'ai', label: 'AI & Automation', icon: 'spark', section: 'ai-lab', filter: 'All' },
+  // `projects` now includes an AI Automation card derived from
+  // `automationLab` (see below), so filtering the work grid by category
+  // 'AI Automation' resolves correctly again.
+  { key: 'ai', label: 'AI & Automation', icon: 'spark', section: 'work', filter: 'AI Automation' },
   { key: 'web', label: 'Web', icon: 'globe', section: 'work', filter: 'Web Development' },
   { key: 'software', label: 'Software', icon: 'code', section: 'work', filter: 'Application Development' },
   { key: 'branding', label: 'Branding', icon: 'layers', section: 'work', filter: 'Brand Design' },
@@ -273,7 +288,7 @@ export const services = [
     title: 'Design',
     text: 'Brand identity, marketing creatives and visual communication systems built to make businesses feel premium and memorable.',
     icon: 'spark',
-    image: '/assets/design/bms-brand-system.jpg',
+    image: '/assets/branding/bms-sticker.jpg',
     capabilities: ['Graphic design', 'Brand identity', 'Marketing design', 'Social media creative', 'Print design'],
   },
   {
@@ -297,7 +312,7 @@ export const services = [
     title: 'Copywriting',
     text: 'Messaging and strategic communication that help founders and brands explain their value with clarity and confidence.',
     icon: 'message',
-    image: '/assets/design/bms-card-front.jpg',
+    image: '/assets/branding/bms-card-back.jpg',
     capabilities: ['Website copy', 'Brand messaging', 'Sales copy', 'Content strategy', 'Storytelling'],
   },
 ];
@@ -586,6 +601,36 @@ export const projects = [
     technologies: ['Signage', 'Social Media Design', 'Mockups', 'Book Cover'],
     projectUrl: '',
   },
+  // AI Automation and Copywriting portfolio cards are derived from
+  // `automationLab` and `copywritingItems` (each defined above) rather than
+  // duplicated here, so the Portfolio grid, the AI & Automation Lab and the
+  // Copywriting section all read from a single source of truth per project.
+  ...automationLab.map((flow) => ({
+    title: flow.title,
+    category: 'AI Automation',
+    description: `${flow.trigger} → ${flow.logic} → ${flow.automation} → ${flow.result}`,
+    status: 'Completed',
+    featured: false,
+    image: flow.image,
+    gallery: flow.gallery,
+    technologies: ['n8n', 'AI Automation', 'Workflow Automation'],
+    projectUrl: '',
+    reportUrl: flow.reportUrl,
+    // Lets the project modal offer a "View Case Study" link into the
+    // deeper Lab presentation instead of duplicating its content here.
+    caseStudySection: 'ai-lab',
+  })),
+  ...copywritingItems.map((item) => ({
+    title: item.title,
+    category: 'Copywriting',
+    description: item.description,
+    status: 'Completed',
+    featured: false,
+    technologies: [item.category],
+    projectUrl: '',
+    reportUrl: item.file,
+    caseStudySection: 'copywriting',
+  })),
 ];
 
 export const portfolioFilters = [

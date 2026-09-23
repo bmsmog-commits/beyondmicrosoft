@@ -177,6 +177,8 @@ function App() {
   const [modal, setModal] = useState(null);
   const [formStatus, setFormStatus] = useState('');
   const [formState, setFormState] = useState('idle'); // idle | submitting | success | error
+  const [newsletterStatus, setNewsletterStatus] = useState('');
+  const [newsletterState, setNewsletterState] = useState('idle'); // idle | submitting | success | error
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeExpertise, setActiveExpertise] = useState('Creative');
@@ -231,6 +233,7 @@ function App() {
   const jumpTo = (id) => {
     setSearchOpen(false);
     setSidebarOpen(false);
+    setModal(null);
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -273,6 +276,39 @@ function App() {
       });
   };
 
+  const submitNewsletter = (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+
+    if (!form.checkValidity()) {
+      setNewsletterState('error');
+      setNewsletterStatus('Please enter a valid email address.');
+      return;
+    }
+
+    if (newsletterState === 'submitting') return; // guard against duplicate submissions
+
+    const data = new FormData(form);
+    setNewsletterState('submitting');
+    setNewsletterStatus('Subscribing...');
+
+    fetch('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: encodeFormData(Object.fromEntries(data.entries())),
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error(`Subscription failed with status ${response.status}`);
+        setNewsletterState('success');
+        setNewsletterStatus("You're subscribed. Watch your inbox for updates from Beyond Microsoft.");
+        form.reset();
+      })
+      .catch(() => {
+        setNewsletterState('error');
+        setNewsletterStatus('Something went wrong subscribing. Please try again.');
+      });
+  };
+
   const SidebarNav = (
     <nav className="sidebar-nav" aria-label="Catalog categories">
       {sidebarCategories.map((category) => (
@@ -295,8 +331,8 @@ function App() {
 
       {/* Desktop fixed sidebar */}
       <aside className="bms-sidebar" aria-label="Primary navigation">
-        <a className="sidebar-brand" href="#home" onClick={() => goToCategory(sidebarCategories[0])}>
-          <AssetImage src={personal.logo} alt="" className="sidebar-logo" fallback="BMS" />
+        <a className="sidebar-brand" href="#home" aria-label="Beyond Microsoft home" onClick={() => goToCategory(sidebarCategories[0])}>
+          <AssetImage src={personal.logo} alt="Beyond Microsoft BMS logo" className="sidebar-logo" fallback="BMS" />
           <span className="sidebar-brand-text">
             <strong>{personal.brand}</strong>
             <small>{personal.founder}</small>
@@ -308,8 +344,8 @@ function App() {
 
       {/* Mobile top bar */}
       <div className="bms-mobile-bar">
-        <a className="sidebar-brand compact" href="#home">
-          <AssetImage src={personal.logo} alt="" className="sidebar-logo" fallback="BMS" />
+        <a className="sidebar-brand compact" href="#home" aria-label="Beyond Microsoft home" onClick={() => goToCategory(sidebarCategories[0])}>
+          <AssetImage src={personal.logo} alt="Beyond Microsoft BMS logo" className="sidebar-logo" fallback="BMS" />
           <strong>{personal.shortBrand}</strong>
         </a>
         <button type="button" className="icon-btn" aria-label="Open menu" aria-expanded={sidebarOpen} onClick={() => setSidebarOpen(true)}>
@@ -363,14 +399,18 @@ function App() {
           <section id="home" className="hero section">
             <div className="hero-grid">
               <div className="hero-copy">
-                <span className="eyebrow">Creative Technologist</span>
+                <span className="eyebrow">{personal.founder} · {personal.title}</span>
                 <h1>
                   CREATIVITY
                   <span>MEETS</span>
                   <span>TECHNOLOGY.</span>
                 </h1>
                 <p>{personal.intro}</p>
-                <strong className="descriptor">{personal.founder} — {personal.title}, {personal.brand}</strong>
+                <div className="hero-positioning">
+                  <strong>{personal.positioning}</strong>
+                  <span>{personal.supportingPositioning}</span>
+                </div>
+                <strong className="descriptor">Founder of {personal.brand} ({personal.shortBrand})</strong>
                 <div className="button-row">
                   <button className="btn primary" type="button" onClick={() => jumpTo('work')}>
                     Explore Work
@@ -396,6 +436,7 @@ function App() {
                   <span>{personal.founder}</span>
                   <strong>{personal.title}</strong>
                   <small>{personal.brand} ({personal.shortBrand})</small>
+                  <small>{personal.positioning}</small>
                 </div>
               </div>
             </div>
@@ -568,12 +609,9 @@ function App() {
               </div>
               <div className="founder-copy">
                 <SectionHeading eyebrow="About" title={`${personal.founder.toUpperCase()}`} text="CREATIVE TECHNOLOGIST" />
-                <p>
-                  {personal.founder} is a Creative Technologist working at the intersection of creativity and
-                  technology. He combines copywriting, software development, AI automation, web development and
-                  graphic design to transform ideas into practical digital solutions.
-                </p>
-                <p>He enjoys simplifying complex problems and turning them into useful experiences.</p>
+                {personal.founderBio.map((paragraph, index) => (
+                  <p key={`founder-bio-${index}`}>{paragraph}</p>
+                ))}
                 <blockquote className="philosophy-quote">&ldquo;{personal.philosophy}&rdquo;</blockquote>
                 <div className="button-row">
                   <a className="btn primary" href={personal.cvPath} target="_blank" rel="noreferrer">
@@ -583,14 +621,79 @@ function App() {
                     Download CV
                   </a>
                   {personal.card && (
-                    <button className="btn ghost" type="button" onClick={() => setModal({ type: 'card' })}>
-                      View Card
+                    <button className="btn ghost" type="button" onClick={() => jumpTo('brand-identity')}>
+                      View Brand Identity
                     </button>
                   )}
                 </div>
               </div>
             </div>
           </section>
+
+          {personal.card && (
+            <section id="brand-identity" className="section brand-identity-section">
+              <SectionHeading
+                eyebrow="Physical Brand Identity"
+                title="PHYSICAL BRAND IDENTITY"
+                text="Beyond Microsoft extends beyond digital experiences. These physical brand assets bring the BMS identity into professional interactions, promotional materials, and real-world brand touchpoints."
+              />
+
+              <div className="brand-identity-block">
+                <h3>BMS Complimentary Card</h3>
+                <p>
+                  Official Beyond Microsoft complimentary card design created to carry the BMS identity into
+                  professional and real-world interactions.
+                </p>
+                <div className="card-pair-grid">
+                  <button
+                    type="button"
+                    className="card-pair-item"
+                    onClick={() => setModal({ type: 'image', item: { src: personal.card, title: 'Beyond Microsoft complimentary card — front' } })}
+                  >
+                    <AssetImage
+                      src={personal.card}
+                      alt="Beyond Microsoft complimentary card front"
+                      className="card-pair-image"
+                      fallback="Card front"
+                    />
+                    <span>Front</span>
+                  </button>
+                  {personal.cardBack && (
+                    <button
+                      type="button"
+                      className="card-pair-item"
+                      onClick={() => setModal({ type: 'image', item: { src: personal.cardBack, title: 'Beyond Microsoft complimentary card — back' } })}
+                    >
+                      <AssetImage
+                        src={personal.cardBack}
+                        alt="Beyond Microsoft complimentary card back"
+                        className="card-pair-image"
+                        fallback="Card back"
+                      />
+                      <span>Back</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {personal.sticker && (
+                <div className="brand-identity-block">
+                  <h3>BMS Brand Sticker</h3>
+                  <p>
+                    A physical BMS brand asset designed to extend the Beyond Microsoft identity into everyday brand
+                    touchpoints.
+                  </p>
+                  <button
+                    type="button"
+                    className="sticker-item"
+                    onClick={() => setModal({ type: 'image', item: { src: personal.sticker, title: 'Beyond Microsoft BMS sticker' } })}
+                  >
+                    <AssetImage src={personal.sticker} alt="Beyond Microsoft BMS sticker" className="sticker-image" fallback="BMS Sticker" />
+                  </button>
+                </div>
+              )}
+            </section>
+          )}
 
           <section id="tech" className="section tech-section">
             <SectionHeading eyebrow="Tech Stack" title="TECH STACK" text="Tools and technologies actually used in the work above." center />
@@ -806,9 +909,9 @@ function App() {
             <h2>READY TO BUILD SOMETHING REMARKABLE?</h2>
             <p>Have an idea, problem or process that could be better? Let's turn it into something useful.</p>
             <div className="button-row center-row">
-              <button className="btn light" type="button" onClick={() => jumpTo('contact')}>
+              <a className="btn light" href={`mailto:${personal.email}`}>
                 Start a Conversation
-              </button>
+              </a>
               <button className="btn ghost" type="button" onClick={() => jumpTo('work')}>
                 Explore the Work
               </button>
@@ -870,6 +973,47 @@ function App() {
                   </a>
                 ))}
               </div>
+            </div>
+            <div className="footer-column footer-newsletter-column">
+              <h3>Stay Connected with BMS</h3>
+              <p>
+                Get thoughtful insights, quotes, investment perspectives, and updates from Beyond Microsoft
+                delivered to your inbox.
+              </p>
+              <form
+                className="subscribe-form"
+                name="newsletter"
+                method="POST"
+                data-netlify="true"
+                netlify-honeypot="newsletter-bot-field"
+                onSubmit={submitNewsletter}
+              >
+                <input type="hidden" name="form-name" value="newsletter" />
+                <p className="visually-hidden">
+                  <label>
+                    Don&apos;t fill this out if you&apos;re human: <input name="newsletter-bot-field" />
+                  </label>
+                </p>
+                <label className="visually-hidden" htmlFor="newsletter-email">
+                  Email address
+                </label>
+                <input
+                  id="newsletter-email"
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="Email address"
+                  disabled={newsletterState === 'submitting'}
+                />
+                <button className="btn primary" type="submit" disabled={newsletterState === 'submitting'}>
+                  {newsletterState === 'submitting' ? 'Subscribing...' : 'Subscribe'}
+                </button>
+              </form>
+              {newsletterStatus && (
+                <p className={`form-status form-status-${newsletterState}`} role="status">
+                  {newsletterStatus}
+                </p>
+              )}
             </div>
           </div>
           <div className="footer-bottom">
@@ -956,18 +1100,6 @@ function App() {
                 <AssetImage src={modal.item.src} alt={modal.item.title} className="project-modal-image" fallback={modal.item.title} />
               </article>
             )}
-            {modal.type === 'card' && (
-              <article className="project-modal-content">
-                <span className="eyebrow">{personal.brand}</span>
-                <h2>Digital Identity Card</h2>
-                <div className="card-lightbox-grid">
-                  <AssetImage src={personal.card} alt="BMS complimentary card — front" className="card-lightbox-image" fallback="Card front" />
-                  {personal.cardBack && (
-                    <AssetImage src={personal.cardBack} alt="BMS complimentary card — back" className="card-lightbox-image" fallback="Card back" />
-                  )}
-                </div>
-              </article>
-            )}
             {modal.type === 'project' && (
               <article className="project-modal-content">
                 <span className="eyebrow">{modal.item.category} · {modal.item.year || ''}</span>
@@ -1034,6 +1166,11 @@ function App() {
                     <a className="btn secondary" href={modal.item.githubUrl} target="_blank" rel="noreferrer">
                       GitHub
                     </a>
+                  )}
+                  {modal.item.caseStudySection && (
+                    <button className="btn secondary" type="button" onClick={() => jumpTo(modal.item.caseStudySection)}>
+                      View Case Study
+                    </button>
                   )}
                   <button className="btn ghost" type="button" onClick={() => setModal(null)}>
                     Back to Catalog

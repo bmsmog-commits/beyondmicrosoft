@@ -3,27 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gabriel Owolabi | Beyond Microsoft - Creative Technologist</title>
+    <title>Gabriel Owolabi | Creative Technologist | Beyond Microsoft</title>
     <meta
       name="description"
-      content="Gabriel Owolabi is a Creative Technologist combining AI automation, software development, web development, copywriting and brand design to build intelligent digital solutions."
+      content="Gabriel Owolabi is a Creative Technologist and founder of Beyond Microsoft, combining creativity, engineering thinking, and technology to build brands, digital experiences, software solutions, and automation systems."
     />
     <link rel="canonical" href="https://example.com/" />
-    <meta property="og:title" content="Gabriel Owolabi | Beyond Microsoft - Creative Technologist" />
+    <meta property="og:title" content="Gabriel Owolabi | Creative Technologist | Beyond Microsoft" />
     <meta
       property="og:description"
-      content="Creativity meets technology. Ideas become intelligent solutions with Gabriel Owolabi and Beyond Microsoft."
+      content="Elevating Standards. Enhancing Quality. Where Creativity Meets Technology. Gabriel Owolabi and Beyond Microsoft build brands, digital experiences, software and automation systems."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://example.com/" />
     <meta property="og:image" content="/assets/profile/header-image.jpg" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Gabriel Owolabi | Beyond Microsoft" />
+    <meta name="twitter:title" content="Gabriel Owolabi | Creative Technologist | Beyond Microsoft" />
     <meta
       name="twitter:description"
-      content="Creative technology, AI automation, web development, software, brand design and copywriting."
+      content="Elevating Standards. Enhancing Quality. Where Creativity Meets Technology. Creative technology, AI automation, web development, software, brand design and copywriting."
     />
     <meta name="theme-color" content="#0a2d5c" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <script type="application/ld+json">
       {
@@ -33,9 +37,10 @@
         "jobTitle": "Creative Technologist",
         "brand": {
           "@type": "Brand",
-          "name": "Beyond Microsoft (BMS)"
+          "name": "Beyond Microsoft (BMS)",
+          "slogan": "Elevating Standards. Enhancing Quality."
         },
-        "description": "Creative Technologist combining AI automation, software development, web development, copywriting and brand design to build intelligent digital solutions."
+        "description": "Creative Technologist and founder of Beyond Microsoft, combining creativity, engineering thinking, and technology to build brands, digital experiences, software solutions, and automation systems."
       }
     </script>
   </head>
@@ -58,6 +63,16 @@
       <input type="text" name="budget" />
       <textarea name="message"></textarea>
       <input type="text" name="bot-field" />
+    </form>
+    <!--
+      Static mirror of the React newsletter form (src/App.jsx footer) so
+      Netlify's build-time HTML scan can detect and provision the
+      "newsletter" form. Field names must stay in sync with the React form.
+    -->
+    <form name="newsletter" data-netlify="true" netlify-honeypot="newsletter-bot-field" hidden>
+      <input type="hidden" name="form-name" value="newsletter" />
+      <input type="email" name="email" />
+      <input type="text" name="newsletter-bot-field" />
     </form>
     <script type="module" src="/src/main.jsx"></script>
   </body>
