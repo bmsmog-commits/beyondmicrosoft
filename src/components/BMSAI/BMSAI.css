@@ -1,0 +1,613 @@
+/* BMS AI chat panel — lazy-loaded with the panel chunk. Built on the
+   existing BMS tokens in src/index.css (navy/blue brand gradient, Inter,
+   8px radius, pill buttons, uppercase bold CTAs) so it follows the site's
+   dark and light themes. */
+.bms-ai-panel {
+  background: var(--surface-strong);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  bottom: calc(max(1.25rem, env(safe-area-inset-bottom)) + 3.75rem);
+  box-shadow: var(--shadow), 0 0 0 1px rgba(27, 110, 242, 0.08);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  height: min(660px, calc(100dvh - 7.5rem));
+  overflow: hidden;
+  position: fixed;
+  right: max(1.25rem, env(safe-area-inset-right));
+  width: min(410px, calc(100vw - 2.5rem));
+  z-index: 45;
+  animation: bms-ai-rise 200ms ease-out;
+}
+
+.bms-ai-panel[hidden] {
+  display: none;
+}
+
+@keyframes bms-ai-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Header — the same navy brand gradient as the mobile navigation panel. */
+.bms-ai-header {
+  align-items: center;
+  background: linear-gradient(135deg, var(--bms-navy), var(--blue-900));
+  border-bottom: 1px solid rgba(141, 181, 255, 0.18);
+  color: var(--bms-white);
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.7rem;
+  padding: 0.85rem 0.85rem 0.85rem 1rem;
+}
+
+.bms-ai-logo {
+  border-radius: 8px;
+  flex-shrink: 0;
+  height: 36px;
+  object-fit: contain;
+  width: 36px;
+}
+
+.bms-ai-heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.bms-ai-heading h2 {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.bms-ai-heading p {
+  color: var(--bms-gray);
+  font-size: 0.74rem;
+  margin: 0.15rem 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bms-ai-icon-btn {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(141, 181, 255, 0.2);
+  border-radius: 8px;
+  color: var(--bms-white);
+  display: flex;
+  flex-shrink: 0;
+  height: 36px;
+  justify-content: center;
+  transition: border-color 160ms ease, color 160ms ease;
+  width: 36px;
+}
+
+.bms-ai-icon-btn svg {
+  height: 18px;
+  width: 18px;
+}
+
+.bms-ai-icon-btn:hover:not(:disabled),
+.bms-ai-icon-btn:focus-visible {
+  border-color: var(--bms-blue-light);
+  color: var(--bms-blue-light);
+}
+
+.bms-ai-icon-btn:focus-visible {
+  outline: 3px solid var(--blue-500);
+  outline-offset: 2px;
+}
+
+.bms-ai-icon-btn:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+/* Conversation log */
+.bms-ai-log {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.9rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1rem;
+}
+
+.bms-ai-message {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 88%;
+}
+
+.bms-ai-message.is-user {
+  align-items: flex-end;
+  align-self: flex-end;
+}
+
+.bms-ai-message.is-assistant {
+  align-items: flex-start;
+  align-self: flex-start;
+}
+
+.bms-ai-bubble {
+  border-radius: 12px;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  padding: 0.7rem 0.9rem;
+}
+
+.is-assistant .bms-ai-bubble {
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-top-left-radius: 4px;
+}
+
+.is-user .bms-ai-bubble {
+  background: linear-gradient(135deg, var(--blue-700), var(--blue-600));
+  border-top-right-radius: 4px;
+  color: #fff;
+  white-space: pre-wrap;
+}
+
+.bms-ai-bubble p,
+.bms-ai-bubble ul,
+.bms-ai-bubble ol {
+  margin: 0;
+}
+
+/* :not(:first-child) keeps this above the `p { margin: 0 }` reset in specificity. */
+.bms-ai-bubble > :not(:first-child) {
+  margin-top: 0.6rem;
+}
+
+.bms-ai-bubble ul,
+.bms-ai-bubble ol {
+  display: grid;
+  gap: 0.3rem;
+  padding-left: 1.15rem;
+}
+
+/* Tailwind's preflight removes list markers; restore them in replies. */
+.bms-ai-bubble ul {
+  list-style: disc;
+}
+
+.bms-ai-bubble ol {
+  list-style: decimal;
+}
+
+.bms-ai-bubble li::marker {
+  color: var(--blue-500);
+}
+
+.bms-ai-bubble strong {
+  font-weight: 700;
+}
+
+.bms-ai-bubble a {
+  color: var(--blue-500);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.bms-ai-line {
+  display: block;
+}
+
+/* Action buttons — pill, uppercase, like the site's .btn. */
+.bms-ai-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.bms-ai-action {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  display: inline-flex;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  min-height: 2.1rem;
+  padding: 0.45rem 0.85rem;
+  text-transform: uppercase;
+  transition: border-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.bms-ai-action:hover {
+  border-color: var(--bms-blue);
+  color: var(--blue-500);
+}
+
+.bms-ai-action.is-primary {
+  background: linear-gradient(135deg, var(--blue-700), var(--blue-500));
+  border-color: transparent;
+  box-shadow: 0 10px 22px rgba(59, 130, 246, 0.28);
+  color: #fff;
+}
+
+.bms-ai-action.is-primary:hover {
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.bms-ai-action:focus-visible,
+.bms-ai-suggestion:focus-visible,
+.bms-ai-send:focus-visible {
+  outline: 3px solid var(--blue-500);
+  outline-offset: 2px;
+}
+
+/* Portfolio navigator (Phase 3) — compact project cards. They reuse the
+   site's own .project-category, .project-status/.status-* and .asset-fallback
+   styles, adjusted here only for the chat's size. */
+.bms-ai-projects {
+  display: grid;
+  gap: 0.55rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.bms-ai-project {
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 76px minmax(0, 1fr);
+  padding: 0.65rem;
+}
+
+.bms-ai-project-thumb {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  display: block;
+  height: auto;
+  object-fit: cover;
+  width: 76px;
+}
+
+.bms-ai-project-thumb.asset-fallback {
+  min-height: 0;
+}
+
+.bms-ai-project-thumb.asset-fallback span {
+  font-size: 0.8rem;
+}
+
+.bms-ai-project-body {
+  display: grid;
+  gap: 0.3rem;
+  justify-items: start;
+  min-width: 0;
+}
+
+.bms-ai-project-body .project-category {
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+}
+
+.bms-ai-project-body h3 {
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.3;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.bms-ai-project-body .project-status {
+  font-size: 0.62rem;
+  padding: 0.2rem 0.5rem;
+  position: static;
+}
+
+.bms-ai-project-body p {
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.bms-ai-project-body .bms-ai-project-reason {
+  border-left: 2px solid var(--bms-blue);
+  color: var(--text);
+  padding-left: 0.5rem;
+}
+
+.bms-ai-project-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.2rem;
+}
+
+.bms-ai-project-actions .bms-ai-action {
+  font-size: 0.64rem;
+  min-height: 1.9rem;
+  padding: 0.35rem 0.75rem;
+}
+
+@media (max-width: 360px) {
+  .bms-ai-project {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .bms-ai-project-thumb {
+    width: 56px;
+  }
+}
+
+/* Business discovery — relevant service areas (not ranked). */
+.bms-ai-services {
+  border-left: 2px solid var(--bms-blue);
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.1rem 0 0.1rem 0.7rem;
+}
+
+.bms-ai-services-label {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.bms-ai-services ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bms-ai-services li {
+  background: var(--blue-100);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+}
+
+/* Business discovery — quick-reply shortcuts (optional; typing still works). */
+.bms-ai-quick-replies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.bms-ai-quick-reply {
+  background: transparent;
+  border: 1px dashed var(--bms-blue);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 600;
+  min-height: 2rem;
+  padding: 0.35rem 0.8rem;
+  text-align: left;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.bms-ai-quick-reply:hover {
+  background: var(--blue-100);
+  border-style: solid;
+}
+
+.bms-ai-quick-reply:focus-visible {
+  outline: 3px solid var(--blue-500);
+  outline-offset: 2px;
+}
+
+/* First-time suggestions */
+.bms-ai-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.bms-ai-suggestion {
+  background: var(--blue-100);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 0.6rem 0.85rem;
+  text-align: left;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.bms-ai-suggestion:hover {
+  border-color: var(--bms-blue);
+}
+
+/* Typing indicator */
+.bms-ai-typing {
+  align-items: center;
+  display: flex;
+  gap: 0.3rem;
+  min-height: 2.6rem;
+}
+
+.bms-ai-typing i {
+  animation: bms-ai-dot 1.2s infinite ease-in-out;
+  background: var(--blue-500);
+  border-radius: 50%;
+  display: block;
+  height: 7px;
+  width: 7px;
+}
+
+.bms-ai-typing i:nth-of-type(2) {
+  animation-delay: 0.15s;
+}
+
+.bms-ai-typing i:nth-of-type(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes bms-ai-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+/* Error state */
+.bms-ai-error {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 12px;
+  display: grid;
+  font-size: 0.86rem;
+  gap: 0.6rem;
+  line-height: 1.5;
+  padding: 0.75rem 0.9rem;
+}
+
+.bms-ai-error p {
+  margin: 0;
+}
+
+/* Composer */
+.bms-ai-composer {
+  align-items: flex-end;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.5rem;
+  padding: 0.75rem 0.75rem 0.4rem;
+}
+
+.bms-ai-composer textarea {
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--text);
+  flex: 1;
+  font-size: 16px; /* prevents iOS zoom on focus */
+  line-height: 1.4;
+  max-height: 120px;
+  min-height: 2.75rem;
+  min-width: 0;
+  padding: 0.65rem 0.8rem;
+  resize: none;
+}
+
+.bms-ai-composer textarea::placeholder {
+  color: var(--muted);
+}
+
+.bms-ai-composer textarea:focus-visible {
+  border-color: var(--bms-blue);
+  outline: 2px solid var(--blue-500);
+  outline-offset: 0;
+}
+
+.bms-ai-send {
+  align-items: center;
+  background: linear-gradient(135deg, var(--blue-700), var(--blue-500));
+  border: 0;
+  border-radius: 12px;
+  color: #fff;
+  display: flex;
+  flex-shrink: 0;
+  height: 2.75rem;
+  justify-content: center;
+  width: 2.75rem;
+}
+
+.bms-ai-send svg {
+  height: 20px;
+  width: 20px;
+}
+
+.bms-ai-send:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.bms-ai-note {
+  color: var(--muted);
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  line-height: 1.4;
+  margin: 0;
+  padding: 0 0.9rem 0.7rem;
+  text-align: center;
+}
+
+/* Phones: full-screen chat that respects notches and the on-screen keyboard. */
+@media (max-width: 640px) {
+  .bms-ai-panel {
+    border: 0;
+    border-radius: 0;
+    bottom: 0;
+    height: 100dvh;
+    left: 0;
+    right: 0;
+    top: 0;
+    width: 100%;
+    z-index: 55; /* above the sticky mobile bar (50), below the mobile nav (60) */
+  }
+
+  .bms-ai-header {
+    padding-top: max(0.85rem, env(safe-area-inset-top));
+  }
+
+  .bms-ai-note {
+    padding-bottom: max(0.7rem, env(safe-area-inset-bottom));
+  }
+
+  .bms-ai-message {
+    max-width: 92%;
+  }
+}
+
+/* Short landscape screens */
+@media (max-height: 520px) and (min-width: 641px) {
+  .bms-ai-panel {
+    bottom: 1rem;
+    height: calc(100dvh - 2rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bms-ai-panel,
+  .bms-ai-typing i {
+    animation: none;
+  }
+
+  .bms-ai-action.is-primary:hover {
+    transform: none;
+  }
+}

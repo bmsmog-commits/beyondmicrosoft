@@ -16,6 +16,7 @@ import {
   techStack,
   testimonialShots,
 } from './data/content';
+import BMSAILauncher from './components/BMSAI/BMSAILauncher';
 
 /* -------------------------------------------------------------------- */
 /* Icons                                                                  */
@@ -236,6 +237,32 @@ function App() {
     setModal(null);
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  // BMS AI action buttons (src/ai/actions.js) reuse the site's own navigation:
+  // portfolio filters, the sidebar highlight and section scrolling.
+  const handleAIAction = (action, { suggestedService, contactMessage } = {}) => {
+    if (action.project) {
+      // "View Project" from a BMS AI card: the same modal as clicking the portfolio card.
+      setSearchOpen(false);
+      setSidebarOpen(false);
+      setModal({ type: 'project', item: action.project });
+      return;
+    }
+    if (action.filter) {
+      setActiveFilter(action.filter);
+      const category = sidebarCategories.find((c) => c.section === 'work' && c.filter === action.filter);
+      if (category) setActiveCategory(category.key);
+    }
+    if (action.section === 'contact') {
+      // Pre-fill (never submit) the existing form from the AI conversation,
+      // leaving anything the visitor already entered untouched.
+      const serviceSelect = document.querySelector('.contact-form select[name="service"]');
+      if (suggestedService && serviceSelect && !serviceSelect.value) serviceSelect.value = suggestedService;
+      const messageField = document.querySelector('.contact-form textarea[name="message"]');
+      if (contactMessage && messageField && !messageField.value.trim()) messageField.value = contactMessage;
+    }
+    jumpTo(action.section);
   };
 
   const encodeFormData = (data) =>
@@ -1181,6 +1208,8 @@ function App() {
           </div>
         </div>
       )}
+
+      <BMSAILauncher onAction={handleAIAction} />
     </div>
   );
 }

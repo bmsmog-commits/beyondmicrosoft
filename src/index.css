@@ -1348,6 +1348,20 @@ blockquote span {
   right: 1rem;
   top: 1rem;
   width: 2.5rem;
+  /* Always above modal content, so nothing can cover its click area. */
+  z-index: 2;
+}
+
+/* In the project modal the status pill sits under the title instead of
+   being pinned top-right (where it covered the close button); the top
+   label keeps clear of the close button. */
+.project-modal-content .project-status {
+  justify-self: start;
+  position: static;
+}
+
+.project-modal-content > .eyebrow:first-child {
+  padding-right: 2.75rem;
 }
 
 .modal-image {

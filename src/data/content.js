@@ -22,7 +22,6 @@ export const personal = {
   // contact@beyondmicrosoft.com is the intended long-term business address,
   // but that inbox isn't live yet — using the working Gmail until it is.
   email: 'beyondmsoft@gmail.com',
-  personalEmail: 'dammmy619@gmail.com',
   cvPath: '/assets/documents/gabriel-cv.pdf',
   // Official transparent BMS mark, used for the sidebar/mobile header logo
   // (site-wide "home" link) and the favicon set generated from it.

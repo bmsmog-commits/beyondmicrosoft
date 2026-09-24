@@ -8,3 +8,11 @@ npm-debug.log*
 # on this folder being present at runtime.
 BMS-Portfolio-Content/
 BMS-Portfolio-Content.zip
+
+# Local environment / secrets — never commit real API keys.
+.env
+.env.*
+!.env.example
+
+# Netlify CLI local state
+.netlify/
