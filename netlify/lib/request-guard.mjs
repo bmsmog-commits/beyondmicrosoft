@@ -1,7 +1,9 @@
-// Request validation and basic abuse protection for the BMS AI endpoint.
+// Request validation and basic abuse protection for the BMS AI endpoints
+// (bms-ai chat/brief and, from Phase 5, bms-lead project inquiries).
 
 export const LIMITS = Object.freeze({
-  maxBodyBytes: 24_000,
+  // Room for 12 messages at their limits plus a project brief (Phase 4).
+  maxBodyBytes: 40_000,
   maxUserMessageChars: 1_000,
   maxAssistantMessageChars: 2_000,
   // Messages sent to the model per request (≈ the last 6 exchanges).
@@ -53,6 +55,27 @@ export function assertSameOrigin(request, extraAllowedOrigins = '') {
   }
 }
 
+/** JSON response with the no-store / nosniff / noindex headers every BMS endpoint uses. */
+export const jsonResponse = (status, body, extraHeaders = {}) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+      'x-content-type-options': 'nosniff',
+      'x-robots-tag': 'noindex',
+      ...extraHeaders,
+    },
+  });
+
+/** Rejects bodies that are not declared as JSON (e.g. form posts from other sites). */
+export function assertJsonContentType(request) {
+  const type = (request.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+  if (type !== 'application/json') {
+    throw new RequestError(415, 'unsupported_media_type', 'Content-Type must be application/json');
+  }
+}
+
 export async function readJsonBody(request) {
   const declared = Number(request.headers.get('content-length') || 0);
   if (declared > LIMITS.maxBodyBytes) {
@@ -73,8 +96,10 @@ export async function readJsonBody(request) {
  * Validates and normalises the conversation: string content only, known
  * roles, strict user/assistant alternation, ending on a user turn, trimmed
  * to the history limit. Returns messages ready for the provider.
+ * `allowAssistantLast` (brief mode) accepts a conversation ending on an
+ * assistant turn; the caller then appends its own user turn.
  */
-export function normaliseMessages(body) {
+export function normaliseMessages(body, { allowAssistantLast = false } = {}) {
   const incoming = body?.messages;
   if (!Array.isArray(incoming) || incoming.length === 0) {
     throw new RequestError(400, 'invalid_messages', 'messages must be a non-empty array');
@@ -113,7 +138,7 @@ export function normaliseMessages(body) {
       throw new RequestError(400, 'invalid_messages', 'Messages must alternate between user and assistant');
     }
   }
-  if (!messages.length || messages[messages.length - 1].role !== 'user') {
+  if (!messages.length || (messages[messages.length - 1].role !== 'user' && !allowAssistantLast)) {
     throw new RequestError(400, 'invalid_messages', 'The last message must come from the user');
   }
   return messages;

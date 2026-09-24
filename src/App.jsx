@@ -260,7 +260,11 @@ function App() {
       const serviceSelect = document.querySelector('.contact-form select[name="service"]');
       if (suggestedService && serviceSelect && !serviceSelect.value) serviceSelect.value = suggestedService;
       const messageField = document.querySelector('.contact-form textarea[name="message"]');
-      if (contactMessage && messageField && !messageField.value.trim()) messageField.value = contactMessage;
+      // Fill an empty message, or replace an earlier BMS AI pre-fill with
+      // newer discovery notes; never the visitor's own text.
+      const current = messageField?.value.trim() || '';
+      const isAIPrefill = /^Project notes from my BMS AI conversation:/.test(current);
+      if (contactMessage && messageField && (!current || isAIPrefill)) messageField.value = contactMessage;
     }
     jumpTo(action.section);
   };

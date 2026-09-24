@@ -1,11 +1,13 @@
-// Runs the Phase 2 (business discovery, tests 1-8) and Phase 3 (portfolio
-// navigator, tests 9-19) scenarios against the real BMS AI function and the
-// live AI provider, printing each reply, the returned project cards and the
-// structured discovery notes for review.
+// Runs the Phase 2 (business discovery, tests 1-8), Phase 3 (portfolio
+// navigator, tests 9-19) and Phase 4 (project brief, tests 20-28) scenarios
+// against the real BMS AI function and the live AI provider, printing each
+// reply, the returned project cards, the structured discovery notes and, for
+// Phase 4, the generated brief for review.
 //
 //   npm run ai:scenarios              (reads AI_API_KEY from .env if present)
 //   npm run ai:scenarios -- 3 5       (only scenarios 3 and 5)
 //   npm run ai:scenarios -- 9-19      (only the Phase 3 scenarios)
+//   npm run ai:scenarios -- 20-28     (only the Phase 4 scenarios)
 //
 // This makes real API calls (roughly 30 requests for all scenarios).
 import handler from '../netlify/functions/bms-ai.mjs';
@@ -74,6 +76,57 @@ const SCENARIOS = [
   { name: 'P3 Facebook', expect: 'Does not invent a Facebook-related project.', turns: ['Have you built Facebook?'] },
   { name: 'P3 best', expect: 'Declines to rank; explains different projects show different capabilities.', turns: ['Which project is the best?'] },
   { name: 'P3 unknown project', expect: 'Does not invent details about a project that is not in the portfolio.', turns: ["Tell me about a project that isn't in the portfolio."] },
+  // ---- Phase 4: project brief (`brief: true` requests a brief after the turns)
+  {
+    name: 'P4 basic website',
+    expect: 'Business: fashion; confirmed: browsing + ordering; payments/accounts/delivery only as potential; budget & timeline Not provided.',
+    turns: ['I run a fashion business and I need a website where customers can browse products and place orders.'],
+    brief: true,
+  },
+  {
+    name: 'P4 automation',
+    expect: 'Problem: manual customer-data entry; service AI & Automation; no invented workflow.',
+    turns: ['I manually copy customer information from WhatsApp into Excel.', 'It takes hours every week and I make mistakes. I want it to happen automatically.'],
+    brief: true,
+  },
+  {
+    name: 'P4 multi-service',
+    expect: 'Services: Brand Design, Web Development, AI & Automation (not ranked).',
+    turns: ['I need a logo, website and automated follow-up for my new business.', "It's a small bakery. Customers find us on Instagram."],
+    brief: true,
+  },
+  {
+    name: 'P4 budget & timeline',
+    expect: 'Budget "₦500,000"; timeline "Before December" — exactly as stated.',
+    turns: [
+      'I run a fashion business and I need a website where customers can browse products and place orders.',
+      "My budget is ₦500,000 and I'd like it completed before December.",
+    ],
+    brief: true,
+  },
+  {
+    name: 'P4 correction',
+    expect: 'Target audience: adults aged 25–45.',
+    turns: [
+      'I run a fashion business for young adults and need a website where customers can browse and order.',
+      'No, the target audience is adults aged 25–45.',
+    ],
+    brief: true,
+  },
+  {
+    name: 'P4 related portfolio',
+    expect: 'Related projects only from the ones shown (e.g. Lutapp), with neutral reasons.',
+    turns: ['Have you built an app?', 'I want a mobile app where my customers can book appointments and pay. I run a hair salon.'],
+    brief: true,
+  },
+  { name: 'P4 insufficient', expect: 'Continues discovery; no brief offered; brief request returns "need more information".', turns: ['I want a website.'], brief: true },
+  { name: 'P4 pricing', expect: 'No invented price; pricing depends on confirmed scope.', turns: ['I need an online store for my shoe business. How much will the project cost?'] },
+  {
+    name: 'P4 unknown capability',
+    expect: 'Satellite software is not presented as a confirmed BMS capability; listed as something to clarify.',
+    turns: ['I run a logistics company and need a website plus custom satellite-tracking firmware for our trucks.'],
+    brief: true,
+  },
 ];
 
 if (!process.env.AI_API_KEY) {
@@ -87,11 +140,11 @@ const selected = process.argv.slice(2).flatMap((arg) => {
 }).filter(Boolean);
 const ORIGIN = 'http://localhost:8888';
 
-async function call(messages, discovery, projectContext) {
+async function call(messages, discovery, projectContext, extra = {}) {
   const request = new Request(`${ORIGIN}/.netlify/functions/bms-ai`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', origin: ORIGIN, host: 'localhost:8888' },
-    body: JSON.stringify({ messages, discovery, projectContext }),
+    body: JSON.stringify({ messages, discovery, projectContext, ...extra }),
   });
   const response = await handler(request, { ip: `scenario-${Date.now()}` });
   return { status: response.status, body: await response.json() };
@@ -105,6 +158,7 @@ for (const [index, scenario] of SCENARIOS.entries()) {
   const messages = [];
   let discovery = null;
   let projectContext = [];
+  const shownProjects = new Set();
   for (const turn of scenario.turns) {
     messages.push({ role: 'user', content: turn });
     console.log(`\nVISITOR: ${turn}`);
@@ -115,12 +169,14 @@ for (const [index, scenario] of SCENARIOS.entries()) {
     }
     discovery = body.discovery;
     projectContext = body.projects.map((project) => project.id);
+    projectContext.forEach((id) => shownProjects.add(id));
     messages.push({ role: 'assistant', content: body.reply });
     console.log(`BMS AI:\n${indent(body.reply)}`);
     console.log(`  stage: ${discovery?.stage}   actions: ${body.actions.join(', ') || '-'}   form service: ${body.suggestedService || '-'}`);
     for (const project of body.projects) {
       console.log(`  project card: ${project.title} [${project.category}, ${project.status}] — ${project.reason}`);
     }
+    if (body.briefOffer !== 'none') console.log(`  brief offer: ${body.briefOffer}`);
     if (body.quickReplies.length) console.log(`  quick replies: ${body.quickReplies.join(' | ')}`);
     for (const entry of discovery?.relevantServices || []) {
       console.log(`  service: ${entry.serviceName}${entry.focusArea ? ` (${entry.focusArea})` : ''} — ${entry.role}: ${entry.reason}`);
@@ -132,5 +188,11 @@ for (const [index, scenario] of SCENARIOS.entries()) {
   if (captured.length) {
     console.log('  captured:');
     captured.forEach(([key, value]) => console.log(`    ${key}: ${Array.isArray(value) ? value.join('; ') : value}`));
+  }
+  if (scenario.brief) {
+    const { status, body } = await call(messages, discovery, [...shownProjects].slice(0, 4), { mode: 'brief' });
+    if (status !== 200) console.log(`\n  BRIEF ERROR ${status}: ${body.message}`);
+    else if (!body.brief) console.log(`\n  BRIEF: not generated — ${body.message}`);
+    else console.log(`\n  BRIEF (${body.message}):\n${indent(JSON.stringify(body.brief, null, 2))}`);
   }
 }

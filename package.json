@@ -22,6 +22,9 @@
     "preview": "vite preview",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
-    "ai:scenarios": "node --env-file-if-exists=.env scripts/bms-ai-scenarios.mjs"
+    "ai:scenarios": "node --env-file-if-exists=.env scripts/bms-ai-scenarios.mjs",
+    "ai:brief-tests": "node --test scripts/bms-ai-brief-tests.mjs",
+    "ai:lead-tests": "node --test scripts/bms-ai-lead-tests.mjs",
+    "test": "node --test scripts/bms-ai-brief-tests.mjs scripts/bms-ai-lead-tests.mjs"
   }
 }

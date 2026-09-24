@@ -1,14 +1,31 @@
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { personal } from '../../data/content';
 import { AI_ACTIONS } from '../../ai/actions';
 import { portfolioRecordById } from '../../ai/portfolio';
 import { AI_EVENTS, trackAIEvent } from './analytics';
-import { DISCOVERY_ERROR, FRIENDLY_ERROR, MAX_MESSAGE_CHARS, sendChatMessage } from './chatService';
+import {
+  BRIEF_ERROR,
+  DISCOVERY_ERROR,
+  FRIENDLY_ERROR,
+  INQUIRY_ERROR,
+  MAX_MESSAGE_CHARS,
+  requestProjectBrief,
+  sendChatMessage,
+  submitProjectInquiry,
+} from './chatService';
 import { buildContactMessage, publishHandoff } from './handoff';
 import RichText from './RichText';
 import './BMSAI.css';
 
 const STORAGE_KEY = 'bms-ai-conversation';
+const BRIEF_STORAGE_KEY = 'bms-ai-brief';
+// Phase 5: minimal "already submitted" marker only (time + preferred method). Contact details are never stored.
+const INQUIRY_MARKER_KEY = 'bms-ai-inquiry-submitted';
+
+// Phase 4: the brief view is its own chunk, loaded the first time a brief is shown.
+const ProjectBrief = lazy(() => import('./ProjectBrief.jsx'));
+// Phase 5: the inquiry is loaded only when the visitor clicks "Start a Project".
+const ProjectInquiry = lazy(() => import('./ProjectInquiry.jsx'));
 const MOBILE_QUERY = '(max-width: 640px)';
 
 const WELCOME = {
@@ -80,6 +97,69 @@ function loadConversation() {
   return [WELCOME];
 }
 
+// Current-tab only, like the conversation; never shared with other visitors.
+function loadBrief() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(BRIEF_STORAGE_KEY) || 'null');
+    return saved && typeof saved === 'object' && saved.version === 1 ? saved : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveBrief(brief) {
+  try {
+    if (brief) sessionStorage.setItem(BRIEF_STORAGE_KEY, JSON.stringify(brief));
+    else sessionStorage.removeItem(BRIEF_STORAGE_KEY);
+  } catch {
+    // Ignore quota / privacy-mode errors.
+  }
+}
+
+function loadInquiryMarker() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(INQUIRY_MARKER_KEY) || 'null');
+    return saved && typeof saved.submittedAt === 'string' ? saved : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveInquiryMarker(marker) {
+  try {
+    if (marker) sessionStorage.setItem(INQUIRY_MARKER_KEY, JSON.stringify(marker));
+    else sessionStorage.removeItem(INQUIRY_MARKER_KEY);
+  } catch {
+    // Ignore quota / privacy-mode errors.
+  }
+}
+
+/** A fresh inquiry draft: a copy of the brief (never the brief itself) and empty contact details. */
+function newInquiry(brief) {
+  return {
+    submissionId: crypto.randomUUID(),
+    briefUpdatedAt: brief.updatedAt,
+    draft: structuredClone(brief),
+    contact: { name: '', email: '', phone: '', preferredContactMethod: 'email', website: '' },
+    consent: false,
+    step: 'details', // details | review | submitted
+    status: 'idle', // idle | submitting | error
+    errorMessage: '',
+    serverFields: [],
+  };
+}
+
+/** IDs of portfolio projects shown during the conversation (most recent first, max 4). */
+function shownProjectIds(conversation) {
+  const ids = [];
+  for (let i = conversation.length - 1; i >= 0 && ids.length < 4; i -= 1) {
+    (conversation[i].projects || []).forEach((project) => {
+      if (ids.length < 4 && !ids.includes(project.id)) ids.push(project.id);
+    });
+  }
+  return ids;
+}
+
 function saveConversation(messages) {
   try {
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-40)));
@@ -109,6 +189,14 @@ function BMSAI({ open, onClose, onAction }) {
   const [input, setInput] = useState('');
   const [status, setStatus] = useState('idle'); // idle | loading | error
   const [errorMessage, setErrorMessage] = useState('');
+  const [brief, setBrief] = useState(loadBrief);
+  const [view, setView] = useState('chat'); // chat | brief | inquiry
+  const [inquiry, setInquiry] = useState(null);
+  const [inquiryMarker, setInquiryMarker] = useState(loadInquiryMarker);
+  const inquirySubmittingRef = useRef(false);
+  const [briefStatus, setBriefStatus] = useState('idle'); // idle | loading | error
+  const briefRef = useRef(brief);
+  const briefRequestRef = useRef(null);
   const inputRef = useRef(null);
   const logRef = useRef(null);
   const requestRef = useRef(null);
@@ -120,6 +208,11 @@ function BMSAI({ open, onClose, onAction }) {
   const lastAssistantId = [...messages].reverse().find((message) => message.role === 'assistant')?.id;
 
   useEffect(() => saveConversation(messages), [messages]);
+
+  useEffect(() => {
+    briefRef.current = brief;
+    saveBrief(brief);
+  }, [brief]);
 
   // Focus the input when the panel opens.
   useEffect(() => {
@@ -144,7 +237,13 @@ function BMSAI({ open, onClose, onAction }) {
   }, [messages, status, open]);
 
   // Abort any in-flight request if the panel unmounts.
-  useEffect(() => () => requestRef.current?.abort(), []);
+  useEffect(
+    () => () => {
+      requestRef.current?.abort();
+      briefRequestRef.current?.abort();
+    },
+    [],
+  );
 
   // Auto-grow the textarea up to its CSS max-height.
   useEffect(() => {
@@ -153,6 +252,39 @@ function BMSAI({ open, onClose, onAction }) {
     field.style.height = 'auto';
     field.style.height = `${field.scrollHeight}px`;
   }, [input]);
+
+  // Phase 4: generate (or update) the project brief from the conversation so far.
+  const generateBrief = useCallback(async (conversation) => {
+    briefRequestRef.current?.abort();
+    const controller = new AbortController();
+    briefRequestRef.current = controller;
+    const currentBrief = briefRef.current;
+    setBriefStatus('loading');
+    try {
+      const result = await requestProjectBrief(conversation, {
+        signal: controller.signal,
+        discovery: latestDiscoveryIn(conversation),
+        projectContext: shownProjectIds(conversation),
+        brief: currentBrief,
+      });
+      if (controller.signal.aborted) return;
+      if (result.insufficient || !result.brief) {
+        setMessages((current) => [...current, { id: newId(), role: 'assistant', content: result.message }]);
+        setBriefStatus('idle');
+        return;
+      }
+      setBrief(result.brief);
+      setMessages((current) => [...current, { id: newId(), role: 'assistant', kind: 'brief', content: result.message }]);
+      setBriefStatus('idle');
+      setView('brief');
+      trackAIEvent(AI_EVENTS.BRIEF_GENERATED, { updated: Boolean(currentBrief), services: result.brief.services.map((entry) => entry.service) });
+    } catch (error) {
+      if (controller.signal.aborted || error?.kind === 'aborted') return;
+      // The conversation is kept; the visitor can try again or keep talking.
+      setBriefStatus('error');
+      trackAIEvent(AI_EVENTS.BRIEF_ERROR, { kind: error?.kind || 'unknown' });
+    }
+  }, []);
 
   const requestReply = useCallback(async (conversation) => {
     requestRef.current?.abort();
@@ -165,23 +297,30 @@ function BMSAI({ open, onClose, onAction }) {
     const previousAssistant = [...conversation].reverse().find((message) => message.role === 'assistant');
     const projectContext = (previousAssistant?.projects || []).map((project) => project.id);
     try {
-      const result = await sendChatMessage(conversation, { signal: controller.signal, discovery: previousDiscovery, projectContext });
+      const result = await sendChatMessage(conversation, {
+        signal: controller.signal,
+        discovery: previousDiscovery,
+        projectContext,
+        briefExists: Boolean(briefRef.current),
+      });
       if (controller.signal.aborted) return;
       const actions = result.actions.filter((id) => AI_ACTIONS[id]);
-      setMessages((current) => [
-        ...current,
-        {
-          id: newId(),
-          role: 'assistant',
-          content: result.reply,
-          actions,
-          suggestedService: result.suggestedService,
-          projects: result.projects,
-          quickReplies: result.quickReplies,
-          discovery: result.discovery,
-        },
-      ]);
+      const reply = {
+        id: newId(),
+        role: 'assistant',
+        content: result.reply,
+        actions,
+        suggestedService: result.suggestedService,
+        projects: result.projects,
+        quickReplies: result.quickReplies,
+        briefOffer: result.briefOffer,
+        discovery: result.discovery,
+      };
+      setMessages((current) => [...current, reply]);
       setStatus('idle');
+      // Phase 4: the visitor explicitly asked for a brief and the server confirmed there's enough to go on.
+      if (result.briefOffer === 'generate') generateBrief([...conversation, reply]);
+      else if (result.briefOffer === 'offer') trackAIEvent(AI_EVENTS.BRIEF_OFFERED, { update: Boolean(briefRef.current) });
       if (isDiscoveryActive(result.discovery) && !isDiscoveryActive(previousDiscovery)) {
         trackAIEvent(AI_EVENTS.DISCOVERY_STARTED);
       }
@@ -205,7 +344,7 @@ function BMSAI({ open, onClose, onAction }) {
       setErrorMessage(specific ? error.message : isDiscoveryActive(previousDiscovery) ? DISCOVERY_ERROR : FRIENDLY_ERROR);
       trackAIEvent(AI_EVENTS.ERROR, { kind: error?.kind || 'unknown' });
     }
-  }, []);
+  }, [generateBrief]);
 
   const send = (text, { source = 'typed' } = {}) => {
     const content = text.trim().slice(0, MAX_MESSAGE_CHARS);
@@ -228,6 +367,13 @@ function BMSAI({ open, onClose, onAction }) {
 
   const reset = () => {
     requestRef.current?.abort();
+    briefRequestRef.current?.abort();
+    setBrief(null);
+    setView('chat');
+    setInquiry(null);
+    setInquiryMarker(null);
+    saveInquiryMarker(null);
+    setBriefStatus('idle');
     setMessages([WELCOME]);
     setStatus('idle');
     setErrorMessage('');
@@ -257,6 +403,74 @@ function BMSAI({ open, onClose, onAction }) {
       onAction?.(action, { suggestedService, contactMessage });
       // On phones the panel covers the page, so get out of the way.
       if (isMobile()) onClose({ restoreFocus: false });
+    }
+  };
+
+  const dismissBriefOffer = (id) => {
+    setMessages((current) => current.map((message) => (message.id === id ? { ...message, briefOfferDismissed: true } : message)));
+    inputRef.current?.focus();
+  };
+
+  const openBrief = () => {
+    if (briefRef.current) setView('brief');
+  };
+
+  const backToChat = () => {
+    setView('chat');
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
+  const saveBriefEdits = (next, changed) => {
+    setBrief(next);
+    if (changed.length) trackAIEvent(AI_EVENTS.BRIEF_EDITED, { fields: changed });
+  };
+
+  // Phase 5: "Start a Project" from the brief opens the inquiry. Nothing is sent
+  // until the visitor reviews it, ticks the consent box and submits.
+  const startProjectFromBrief = () => {
+    if (!brief) return;
+    trackAIEvent(AI_EVENTS.START_PROJECT_CLICKED, { fromBrief: true });
+    if (!inquiry && !inquiryMarker) trackAIEvent(AI_EVENTS.INQUIRY_STARTED);
+    setInquiry((current) => {
+      if (current) {
+        if (current.step === 'submitted' || current.briefUpdatedAt === brief.updatedAt) return current;
+        // The brief changed since the draft was made: take the new brief, keep the contact details.
+        return { ...current, briefUpdatedAt: brief.updatedAt, draft: structuredClone(brief) };
+      }
+      // Already submitted in this tab (e.g. after a reload): show the confirmation, not a new form.
+      if (inquiryMarker) return { ...newInquiry(brief), step: 'submitted', contact: { preferredContactMethod: inquiryMarker.preferredContactMethod } };
+      return newInquiry(brief);
+    });
+    setView('inquiry');
+  };
+
+  const updateInquiry = useCallback((patch) => setInquiry((current) => (current ? { ...current, ...patch } : current)), []);
+
+  const submitInquiry = async () => {
+    // Guards against double clicks and repeat submits; the server also dedupes by submissionId.
+    if (!inquiry || inquirySubmittingRef.current || inquiry.step === 'submitted') return;
+    inquirySubmittingRef.current = true;
+    updateInquiry({ status: 'submitting', errorMessage: '', serverFields: [] });
+    const { website, ...contact } = inquiry.contact;
+    try {
+      await submitProjectInquiry({
+        submissionId: inquiry.submissionId,
+        contact,
+        brief: inquiry.draft,
+        consent: inquiry.consent === true,
+        website: website || '',
+      });
+      const marker = { submittedAt: new Date().toISOString(), preferredContactMethod: contact.preferredContactMethod };
+      saveInquiryMarker(marker);
+      setInquiryMarker(marker);
+      updateInquiry({ status: 'idle', step: 'submitted' });
+      trackAIEvent(AI_EVENTS.INQUIRY_SUBMITTED, { services: inquiry.draft.services.map((entry) => entry.service), method: contact.preferredContactMethod });
+    } catch (error) {
+      // Everything the visitor entered stays in place for a retry.
+      updateInquiry({ status: 'error', errorMessage: error?.message || INQUIRY_ERROR, serverFields: error?.fields || [] });
+      trackAIEvent(AI_EVENTS.INQUIRY_ERROR, { kind: error?.kind || 'unknown' });
+    } finally {
+      inquirySubmittingRef.current = false;
     }
   };
 
@@ -304,7 +518,13 @@ function BMSAI({ open, onClose, onAction }) {
         <img className="bms-ai-logo" src={personal.logo} alt="" width="36" height="36" />
         <div className="bms-ai-heading">
           <h2 id="bms-ai-title">BMS AI</h2>
-          <p id="bms-ai-subtitle">{isDiscoveryActive(discovery) ? 'Exploring your project' : `Your ${personal.brand} guide`}</p>
+          <p id="bms-ai-subtitle">
+            {view === 'inquiry' && inquiry
+              ? 'Project inquiry'
+              : view === 'brief' && brief
+                ? 'Project brief'
+                : isDiscoveryActive(discovery) ? 'Exploring your project' : `Your ${personal.brand} guide`}
+          </p>
         </div>
         <button
           type="button"
@@ -312,7 +532,7 @@ function BMSAI({ open, onClose, onAction }) {
           onClick={reset}
           aria-label="Start a new conversation"
           title="New conversation"
-          disabled={!hasUserMessages && status === 'idle'}
+          disabled={!hasUserMessages && status === 'idle' && !brief}
         >
           <Glyph path={RESET_GLYPH} />
         </button>
@@ -321,6 +541,32 @@ function BMSAI({ open, onClose, onAction }) {
         </button>
       </header>
 
+      {view === 'inquiry' && inquiry ? (
+        <div className="bms-ai-log bms-ai-brief-view">
+          <Suspense fallback={<p role="status">Loading project inquiry…</p>}>
+            <ProjectInquiry
+              inquiry={inquiry}
+              onChange={updateInquiry}
+              onSubmit={submitInquiry}
+              onBack={() => setView('brief')}
+              onExplore={() => handleAction('view-portfolio')}
+            />
+          </Suspense>
+        </div>
+      ) : view === 'brief' && brief ? (
+        <div className="bms-ai-log bms-ai-brief-view">
+          <Suspense fallback={<p role="status">Loading project brief…</p>}>
+            <ProjectBrief
+              brief={brief}
+              inquirySubmitted={Boolean(inquiryMarker)}
+              onBack={backToChat}
+              onSave={saveBriefEdits}
+              onStartProject={startProjectFromBrief}
+              onViewProject={viewProject}
+            />
+          </Suspense>
+        </div>
+      ) : (
       <div className="bms-ai-log" ref={logRef} role="log" aria-live="polite" aria-relevant="additions" aria-label="Conversation with BMS AI">
         {messages.map((message) => (
           <div key={message.id} className={`bms-ai-message is-${message.role}`}>
@@ -408,6 +654,28 @@ function BMSAI({ open, onClose, onAction }) {
                 </ul>
               </div>
             )}
+            {message.kind === 'brief' && brief && (
+              <div className="bms-ai-brief-entry">
+                <strong>{brief.project?.title || 'Project Brief'}</strong>
+                <button type="button" className="bms-ai-action is-primary" onClick={openBrief}>
+                  View Project Brief
+                </button>
+              </div>
+            )}
+            {message.id === lastAssistantId &&
+              status === 'idle' &&
+              briefStatus === 'idle' &&
+              message.briefOffer === 'offer' &&
+              !message.briefOfferDismissed && (
+                <div className="bms-ai-actions" role="group" aria-label="Project brief">
+                  <button type="button" className="bms-ai-action is-primary" onClick={() => generateBrief(messages)}>
+                    {brief ? 'Update Project Brief' : 'Generate Project Brief'}
+                  </button>
+                  <button type="button" className="bms-ai-action" onClick={() => dismissBriefOffer(message.id)}>
+                    Continue Discussion
+                  </button>
+                </div>
+              )}
             {message.id === lastAssistantId && status === 'idle' && message.quickReplies?.length > 0 && (
               <div className="bms-ai-quick-replies" role="group" aria-label="Quick replies">
                 {message.quickReplies.map((reply) => (
@@ -457,6 +725,31 @@ function BMSAI({ open, onClose, onAction }) {
           </div>
         )}
 
+        {briefStatus === 'loading' && (
+          <div className="bms-ai-message is-assistant" role="status">
+            <div className="bms-ai-bubble bms-ai-typing">
+              <span className="bms-ai-typing-label">Preparing your project brief…</span>
+              <i aria-hidden="true" />
+              <i aria-hidden="true" />
+              <i aria-hidden="true" />
+            </div>
+          </div>
+        )}
+
+        {briefStatus === 'error' && (
+          <div className="bms-ai-error" role="alert">
+            <p>{BRIEF_ERROR}</p>
+            <div className="bms-ai-actions">
+              <button type="button" className="bms-ai-action is-primary" onClick={() => generateBrief(messages)}>
+                Try again
+              </button>
+              <button type="button" className="bms-ai-action" onClick={() => setBriefStatus('idle')}>
+                Continue Discussion
+              </button>
+            </div>
+          </div>
+        )}
+
         {status === 'error' && (
           <div className="bms-ai-error" role="alert">
             <p>{errorMessage}</p>
@@ -478,8 +771,10 @@ function BMSAI({ open, onClose, onAction }) {
           </div>
         )}
       </div>
+      )}
 
       <form
+        hidden={(view === 'brief' && Boolean(brief)) || (view === 'inquiry' && Boolean(inquiry))}
         className="bms-ai-composer"
         onSubmit={(event) => {
           event.preventDefault();

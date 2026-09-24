@@ -356,6 +356,35 @@
   }
 }
 
+/* Phase 4 — composer hidden while the brief view is open. */
+.bms-ai-composer[hidden] {
+  display: none;
+}
+
+.bms-ai-typing-label {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin-right: 0.35rem;
+}
+
+/* Phase 4 — chat entry that opens the project brief. */
+.bms-ai-brief-entry {
+  align-items: center;
+  background: var(--blue-100);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  justify-content: space-between;
+  padding: 0.6rem 0.75rem;
+}
+
+.bms-ai-brief-entry strong {
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
 /* Business discovery — relevant service areas (not ranked). */
 .bms-ai-services {
   border-left: 2px solid var(--bms-blue);

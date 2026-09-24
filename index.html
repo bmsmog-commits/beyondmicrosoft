@@ -77,6 +77,25 @@
       <input type="email" name="email" />
       <input type="text" name="newsletter-bot-field" />
     </form>
+    <!--
+      Phase 5: stores BMS AI project inquiries. Submitted only server-side by
+      netlify/functions/bms-lead.mjs after validation — never shown to
+      visitors. Field names must stay in sync with deliverInquiry() in
+      netlify/lib/lead.mjs.
+    -->
+    <form name="project-inquiry" data-netlify="true" netlify-honeypot="inquiry-bot-field" hidden>
+      <input type="hidden" name="form-name" value="project-inquiry" />
+      <input type="text" name="submissionId" />
+      <input type="text" name="name" />
+      <input type="email" name="email" />
+      <input type="tel" name="phone" />
+      <input type="text" name="preferredContactMethod" />
+      <input type="text" name="projectName" />
+      <input type="text" name="services" />
+      <textarea name="summary"></textarea>
+      <textarea name="payload"></textarea>
+      <input type="text" name="inquiry-bot-field" />
+    </form>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -10,6 +10,7 @@ import {
   RequestError,
   assertSameOrigin,
   createRateLimiter,
+  jsonResponse,
   normaliseMessages,
   readJsonBody,
 } from '../lib/request-guard.mjs';
@@ -22,6 +23,7 @@ import {
   toClientDiscovery,
 } from '../lib/discovery.mjs';
 import { MAX_PROJECT_RESULTS, portfolioRecordsBlock, retrievePortfolio } from '../lib/portfolio-search.mjs';
+import { BRIEF_RESPONSE_SCHEMA, briefReady, briefRequestBlock, groundBrief, sanitiseBrief } from '../lib/brief.mjs';
 import { AI_ACTION_IDS, AI_MAX_ACTIONS } from '../../src/ai/actions.js';
 import { cardSummary, portfolioRecordById } from '../../src/ai/portfolio.js';
 
@@ -29,6 +31,9 @@ const FRIENDLY_ERROR =
   "I'm having trouble connecting right now. Please try again or contact Beyond Microsoft directly.";
 const RATE_LIMITED =
   "You've sent a lot of messages in a short time. Please wait a few minutes, or contact Beyond Microsoft directly.";
+const BRIEF_ERROR = "I couldn't generate the brief right now. We can continue the conversation and try again.";
+const BRIEF_NEEDS_MORE =
+  "I need a little more information before I can prepare a useful project brief. Could you tell me about your business and what you'd like to build or improve?";
 const REFUSAL_REPLY =
   "I can't help with that one, but I'm happy to answer questions about Beyond Microsoft's services, portfolio or how to start a project.";
 
@@ -39,17 +44,7 @@ const isAllowedRequest = createRateLimiter({
   maxRequests: LIMITS.rateLimitMaxRequests,
 });
 
-const json = (status, body, extraHeaders = {}) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      'content-type': 'application/json; charset=utf-8',
-      'cache-control': 'no-store',
-      'x-content-type-options': 'nosniff',
-      'x-robots-tag': 'noindex',
-      ...extraHeaders,
-    },
-  });
+const json = jsonResponse;
 
 const log = (level, event, details = {}) => console[level](JSON.stringify({ source: 'bms-ai', event, ...details }));
 
@@ -107,6 +102,8 @@ function sanitiseModelOutput(data, previousDiscovery, allowedProjectIds) {
     actions: actions.slice(0, AI_MAX_ACTIONS),
     projects: projectCards(data.projects, allowedProjectIds),
     quickReplies: sanitiseQuickReplies(data.quickReplies),
+    // Phase 4: a brief is only offered/generated once the visitor has given enough information.
+    briefOffer: ['offer', 'generate'].includes(data.briefOffer) && briefReady(discovery) ? data.briefOffer : 'none',
     discovery: toClientDiscovery(discovery),
     // Contact-form pre-selection comes from the validated catalog and the
     // internal confidence judgment, which itself is not sent to the browser.
@@ -119,8 +116,9 @@ function sanitiseModelOutput(data, previousDiscovery, allowedProjectIds) {
  * discovery notes, so they survive history trimming, and the portfolio records
  * retrieved for this question. The cached system prompt stays unchanged.
  */
-function withTurnContext(messages, discovery, retrieval) {
+function withTurnContext(messages, discovery, retrieval, briefExists = false) {
   const blocks = [];
+  if (briefExists) blocks.push('<brief_status>A project brief has already been generated in this conversation.</brief_status>');
   if (hasDiscoveryContent(discovery)) blocks.push(discoveryNotesBlock(discovery));
   if (retrieval.records.length) blocks.push(portfolioRecordsBlock(retrieval));
   if (!blocks.length) return messages;
@@ -129,6 +127,73 @@ function withTurnContext(messages, discovery, retrieval) {
     ...messages.slice(0, -1),
     { role: 'user', content: [{ type: 'text', text: last.content }, ...blocks.map((text) => ({ type: 'text', text }))] },
   ];
+}
+
+/**
+ * Phase 4 — brief mode: turns the conversation, the discovery notes and any
+ * related portfolio records into a validated project brief. Nothing is sent
+ * or stored anywhere; the brief is returned to the visitor only.
+ */
+async function handleBrief(body, startedAt) {
+  const messages = normaliseMessages(body, { allowAssistantLast: true });
+  const discovery = toClientDiscovery(sanitiseDiscovery(body?.discovery));
+  const previousBrief = sanitiseBrief(body?.brief);
+  if (!briefReady(discovery) && !previousBrief) {
+    return json(200, { mode: 'brief', brief: null, insufficient: true, message: BRIEF_NEEDS_MORE });
+  }
+
+  // Related projects may only come from projects shown in this conversation
+  // (validated IDs), the current brief, or discovery-based retrieval.
+  const contextIds = [
+    ...projectContextIds(body?.projectContext),
+    ...(previousBrief?.relatedProjects || []).map((project) => project.id),
+  ];
+  const retrieval = retrievePortfolio({ message: '', discovery, contextIds: [...new Set(contextIds)] });
+  const allowedProjectIds = new Set(retrieval.records.map((record) => record.id));
+
+  const blocks = [briefRequestBlock(previousBrief)];
+  if (hasDiscoveryContent(discovery)) blocks.push(discoveryNotesBlock(discovery));
+  if (retrieval.records.length) blocks.push(portfolioRecordsBlock(retrieval));
+  const last = messages[messages.length - 1];
+  const turnMessages =
+    last.role === 'user'
+      ? [...messages.slice(0, -1), { role: 'user', content: [{ type: 'text', text: last.content }, ...blocks.map((text) => ({ type: 'text', text }))] }]
+      : [...messages, { role: 'user', content: blocks.map((text) => ({ type: 'text', text })) }];
+
+  try {
+    const provider = createProvider(process.env);
+    const result = await provider.generate({
+      system: SYSTEM_PROMPT,
+      messages: turnMessages,
+      schema: BRIEF_RESPONSE_SCHEMA,
+      maxTokens: MAX_OUTPUT_TOKENS,
+    });
+    const brief = result.refused ? null : sanitiseBrief(result.data?.brief, { allowedProjectIds });
+    log('info', 'brief', { ms: Date.now() - startedAt, refused: result.refused, ok: Boolean(brief), records: retrieval.records.length, usage: result.usage });
+    if (!brief) return json(502, { error: 'unavailable', message: BRIEF_ERROR });
+
+    // Budget, timeline and business name must be traceable to the visitor's own words.
+    const visitorText = [
+      ...messages.filter((message) => message.role === 'user').map((message) => message.content),
+      previousBrief?.budget,
+      previousBrief?.timeline,
+      previousBrief?.business?.name,
+    ]
+      .filter(Boolean)
+      .join('\n');
+    groundBrief(brief, { visitorText, previousBrief });
+    const now = new Date().toISOString();
+    brief.createdAt = previousBrief?.createdAt || now;
+    brief.updatedAt = now;
+    const message =
+      typeof result.data?.message === 'string' && result.data.message.trim()
+        ? result.data.message.trim().slice(0, 600)
+        : "Here's a project brief based on what you've told me. Please review it and correct anything that isn't right.";
+    return json(200, { mode: 'brief', message, brief });
+  } catch (error) {
+    log('error', 'brief_failed', { kind: error?.kind || 'unknown', status: error?.status, detail: error?.message, ms: Date.now() - startedAt });
+    return json(error?.kind === 'rate_limit' ? 503 : 502, { error: 'unavailable', message: BRIEF_ERROR });
+  }
 }
 
 export default async function handler(request, context) {
@@ -147,6 +212,7 @@ export default async function handler(request, context) {
     }
 
     const body = await readJsonBody(request);
+    if (body?.mode === 'brief') return await handleBrief(body, startedAt);
     const messages = normaliseMessages(body);
     // Untrusted: comes back from the browser. Sanitised to known fields/services before use;
     // any confidence label is dropped because the real client never holds one.
@@ -162,7 +228,7 @@ export default async function handler(request, context) {
     const provider = createProvider(process.env);
     const result = await provider.generate({
       system: SYSTEM_PROMPT,
-      messages: withTurnContext(messages, previousDiscovery, retrieval),
+      messages: withTurnContext(messages, previousDiscovery, retrieval, body?.briefExists === true),
       schema: RESPONSE_SCHEMA,
       maxTokens: MAX_OUTPUT_TOKENS,
     });
@@ -183,6 +249,7 @@ export default async function handler(request, context) {
         actions: ['view-services'],
         projects: [],
         quickReplies: [],
+        briefOffer: 'none',
         discovery: toClientDiscovery(previousDiscovery),
         suggestedService: null,
       });
