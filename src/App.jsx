@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import {
   articles,
   automationLab,
@@ -16,6 +17,7 @@ import {
   techStack,
   testimonialShots,
 } from './data/content';
+import BMSAILauncher from './components/BMSAI/BMSAILauncher';
 
 /* -------------------------------------------------------------------- */
 /* Icons                                                                  */
@@ -116,7 +118,23 @@ function ContactIcon({ type }) {
   );
 }
 
-function AssetImage({ src, alt, className = '', fallback = 'BMS' }) {
+// Intrinsic sizes of the lazy images whose CSS height is `auto`. Passing them as
+// width/height lets the browser reserve their space before they load, so
+// content below doesn't shift and sidebar jumps land on the first click.
+const IMAGE_SIZES = {
+  '/assets/automation/customs-compliance-flow.png': [738, 2005],
+  '/assets/projects/furniture-website-screenshot.png': [720, 1396],
+  '/assets/branding/bms-card-front.webp': [2200, 1258],
+  '/assets/branding/bms-card-back.webp': [2200, 1258],
+  '/assets/branding/bms-sticker.webp': [2200, 2200],
+  '/assets/profile/gabriel-profile.jpg.jpg': [1090, 1443],
+};
+const sizeOf = (src) => {
+  const size = IMAGE_SIZES[src];
+  return size ? { width: size[0], height: size[1] } : {};
+};
+
+function AssetImage({ src, alt, className = '', fallback = 'BMS', width, height }) {
   const [failed, setFailed] = useState(false);
   if (!src || failed) {
     return (
@@ -125,7 +143,10 @@ function AssetImage({ src, alt, className = '', fallback = 'BMS' }) {
       </div>
     );
   }
-  return <img src={src} alt={alt} className={className} loading="lazy" onError={() => setFailed(true)} />;
+  // An explicit ratio (not the attributes' `auto w/h`) keeps the box identical before and
+  // after loading in every browser, including images with padding (the founder photo).
+  const style = width && height ? { aspectRatio: `${width} / ${height}` } : undefined;
+  return <img src={src} alt={alt} className={className} width={width} height={height} style={style} loading="lazy" onError={() => setFailed(true)} />;
 }
 
 function SectionHeading({ eyebrow, title, text, center = false }) {
@@ -183,6 +204,8 @@ function App() {
   const [query, setQuery] = useState('');
   const [activeExpertise, setActiveExpertise] = useState('Creative');
   const searchInputRef = useRef(null);
+  const mobileBarRef = useRef(null);
+  const topbarRef = useRef(null);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -209,6 +232,27 @@ function App() {
     if (searchOpen) searchInputRef.current?.focus();
   }, [searchOpen]);
 
+  // Mobile (<=760px): the topbar sticks directly below the brand bar, and
+  // section jumps stop below both. Their heights vary (logo size, wrapping
+  // action buttons, the active category title), so they are measured.
+  const syncStickyHeights = () => {
+    const bar = mobileBarRef.current;
+    const topbar = topbarRef.current;
+    if (!bar || !topbar) return;
+    const root = document.documentElement.style;
+    root.setProperty('--mobile-bar-height', `${bar.offsetHeight}px`);
+    root.setProperty('--mobile-header-height', `${bar.offsetHeight + topbar.offsetHeight}px`);
+  };
+
+  useEffect(() => {
+    if (!mobileBarRef.current || !topbarRef.current || typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(syncStickyHeights);
+    observer.observe(mobileBarRef.current);
+    observer.observe(topbarRef.current);
+    syncStickyHeights();
+    return () => observer.disconnect();
+  }, []);
+
   const filteredProjects = useMemo(() => {
     if (activeFilter === 'All') return projects;
     return projects.filter((project) => project.category === activeFilter);
@@ -223,9 +267,15 @@ function App() {
   }, [query]);
 
   const goToCategory = (category) => {
-    setActiveCategory(category.key);
-    setActiveFilter(category.filter);
-    setSidebarOpen(false);
+    // Commit the filter change before measuring: otherwise the portfolio grid
+    // resizes after the scroll target is computed and the jump lands short.
+    flushSync(() => {
+      setActiveCategory(category.key);
+      setActiveFilter(category.filter);
+      setSidebarOpen(false);
+    });
+    // The topbar title just changed and may have re-wrapped: measure before scrolling.
+    syncStickyHeights();
     const el = document.getElementById(category.section);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -236,6 +286,36 @@ function App() {
     setModal(null);
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  // BMS AI action buttons (src/ai/actions.js) reuse the site's own navigation:
+  // portfolio filters, the sidebar highlight and section scrolling.
+  const handleAIAction = (action, { suggestedService, contactMessage } = {}) => {
+    if (action.project) {
+      // "View Project" from a BMS AI card: the same modal as clicking the portfolio card.
+      setSearchOpen(false);
+      setSidebarOpen(false);
+      setModal({ type: 'project', item: action.project });
+      return;
+    }
+    if (action.filter) {
+      setActiveFilter(action.filter);
+      const category = sidebarCategories.find((c) => c.section === 'work' && c.filter === action.filter);
+      if (category) setActiveCategory(category.key);
+    }
+    if (action.section === 'contact') {
+      // Pre-fill (never submit) the existing form from the AI conversation,
+      // leaving anything the visitor already entered untouched.
+      const serviceSelect = document.querySelector('.contact-form select[name="service"]');
+      if (suggestedService && serviceSelect && !serviceSelect.value) serviceSelect.value = suggestedService;
+      const messageField = document.querySelector('.contact-form textarea[name="message"]');
+      // Fill an empty message, or replace an earlier BMS AI pre-fill with
+      // newer discovery notes; never the visitor's own text.
+      const current = messageField?.value.trim() || '';
+      const isAIPrefill = /^Project notes from my BMS AI conversation:/.test(current);
+      if (contactMessage && messageField && (!current || isAIPrefill)) messageField.value = contactMessage;
+    }
+    jumpTo(action.section);
   };
 
   const encodeFormData = (data) =>
@@ -343,7 +423,7 @@ function App() {
       </aside>
 
       {/* Mobile top bar */}
-      <div className="bms-mobile-bar">
+      <div className="bms-mobile-bar" ref={mobileBarRef}>
         <a className="sidebar-brand compact" href="#home" aria-label="Beyond Microsoft home" onClick={() => goToCategory(sidebarCategories[0])}>
           <AssetImage src={personal.logo} alt="Beyond Microsoft BMS logo" className="sidebar-logo" fallback="BMS" />
           <strong>{personal.shortBrand}</strong>
@@ -372,7 +452,7 @@ function App() {
       )}
 
       <div className="bms-main">
-        <header className="bms-topbar">
+        <header className="bms-topbar" ref={topbarRef}>
           <span className="topbar-title">{sidebarCategories.find((c) => c.key === activeCategory)?.label.toUpperCase() || 'ALL WORK'}</span>
           <div className="topbar-actions">
             <button type="button" className="icon-btn" aria-label="Search (Ctrl+K)" onClick={() => setSearchOpen(true)}>
@@ -535,7 +615,7 @@ function App() {
                 <article className="service-card" key={service.title}>
                   <div className="service-visual">
                     {service.image ? (
-                      <AssetImage src={service.image} alt={service.title} className="service-card-image" fallback={service.title} />
+                      <AssetImage src={service.image} alt={service.title} className="service-card-image" fallback={service.title} {...sizeOf(service.image)} />
                     ) : (
                       <Icon name={service.icon} />
                     )}
@@ -578,7 +658,7 @@ function App() {
                     {(flow.gallery?.length > 0 || flow.reportUrl) && (
                       <div className="lab-links">
                         {flow.gallery?.length > 0 && (
-                          <button type="button" className="text-link" onClick={() => setModal({ type: 'project', item: { ...flow, category: 'AI & Automation', status: 'Completed', description: `${flow.trigger} → ${flow.logic} → ${flow.automation} → ${flow.result}` } })}>
+                          <button type="button" className="text-link" onClick={() => setModal({ type: 'project', item: { ...flow, category: 'AI Automation', status: 'Completed', description: `${flow.trigger} → ${flow.logic} → ${flow.automation} → ${flow.result}` } })}>
                             View Workflow Gallery &rarr;
                           </button>
                         )}
@@ -605,6 +685,7 @@ function App() {
                   alt="Gabriel Owolabi, Creative Technologist and Founder of Beyond Microsoft"
                   className="founder-image"
                   fallback="Gabriel Owolabi"
+                  {...sizeOf(personal.headshot)}
                 />
               </div>
               <div className="founder-copy">
@@ -655,6 +736,7 @@ function App() {
                       alt="Beyond Microsoft complimentary card front"
                       className="card-pair-image"
                       fallback="Card front"
+                      {...sizeOf(personal.card)}
                     />
                     <span>Front</span>
                   </button>
@@ -669,6 +751,7 @@ function App() {
                         alt="Beyond Microsoft complimentary card back"
                         className="card-pair-image"
                         fallback="Card back"
+                        {...sizeOf(personal.cardBack)}
                       />
                       <span>Back</span>
                     </button>
@@ -688,7 +771,7 @@ function App() {
                     className="sticker-item"
                     onClick={() => setModal({ type: 'image', item: { src: personal.sticker, title: 'Beyond Microsoft BMS sticker' } })}
                   >
-                    <AssetImage src={personal.sticker} alt="Beyond Microsoft BMS sticker" className="sticker-image" fallback="BMS Sticker" />
+                    <AssetImage src={personal.sticker} alt="Beyond Microsoft BMS sticker" className="sticker-image" fallback="BMS Sticker" {...sizeOf(personal.sticker)} />
                   </button>
                 </div>
               )}
@@ -1102,7 +1185,7 @@ function App() {
             )}
             {modal.type === 'project' && (
               <article className="project-modal-content">
-                <span className="eyebrow">{modal.item.category} · {modal.item.year || ''}</span>
+                <span className="eyebrow">{modal.item.category}{modal.item.year ? ` · ${modal.item.year}` : ''}</span>
                 <h2>{modal.item.title}</h2>
                 <span className={`project-status status-${modal.item.status.toLowerCase().replace(/\s+/g, '-')}`}>
                   {modal.item.status}
@@ -1181,6 +1264,8 @@ function App() {
           </div>
         </div>
       )}
+
+      <BMSAILauncher onAction={handleAIAction} />
     </div>
   );
 }

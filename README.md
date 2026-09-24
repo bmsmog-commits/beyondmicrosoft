@@ -22,7 +22,28 @@ npm run build
 
 ## Environment Variables
 
-No environment variables are required yet. Future email, analytics or API integrations should use environment variables and must not be hard-coded into frontend source.
+Set these in Netlify (**Site configuration → Environment variables**). For local development copy `.env.example` to `.env` (git-ignored). Never prefix secrets with `VITE_` — Vite ships those to the browser.
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `AI_API_KEY` | Yes, for BMS AI | Anthropic API key used by the BMS AI Netlify Function. Server-side only. |
+| `AI_MODEL` | No | Model ID. Defaults to `claude-opus-5`. |
+| `AI_PROVIDER` | No | AI provider adapter. Defaults to `anthropic`. |
+| `AI_ALLOWED_ORIGINS` | No | Extra comma-separated origins allowed to call the endpoint. |
+
+Without `AI_API_KEY` the website works normally; the assistant just shows its "trouble connecting" message.
+
+## BMS AI assistant
+
+A floating assistant (bottom-right) that answers questions about BMS, its services, portfolio and process, and guides visitors to the contact form. See [docs/BMS-AI.md](docs/BMS-AI.md) for the architecture.
+
+Run the site together with the AI function locally:
+
+```bash
+npx netlify-cli dev
+```
+
+(`npm start` alone runs the site, but the assistant can't connect without the function.)
 
 ## Assets
 
@@ -79,11 +100,10 @@ The form validates required fields and displays an integration-ready message. Co
 
 ## SEO
 
-SEO metadata is in `public/index.html`. Update these placeholders before launch:
+SEO metadata is in the root `index.html` (the Vite entry point). The production domain is `https://beyondmicrosoft.com/` and is used for:
 
-- Canonical URL
-- Open Graph URL
-- Sitemap URL in `public/sitemap.xml`
+- Canonical URL and Open Graph URL in `index.html`
+- Homepage URL in `public/sitemap.xml`
 - Sitemap URL in `public/robots.txt`
 
 ## Netlify Deployment

@@ -22,7 +22,6 @@ export const personal = {
   // contact@beyondmicrosoft.com is the intended long-term business address,
   // but that inbox isn't live yet — using the working Gmail until it is.
   email: 'beyondmsoft@gmail.com',
-  personalEmail: 'dammmy619@gmail.com',
   cvPath: '/assets/documents/gabriel-cv.pdf',
   // Official transparent BMS mark, used for the sidebar/mobile header logo
   // (site-wide "home" link) and the favicon set generated from it.
@@ -34,9 +33,9 @@ export const personal = {
   // Official 2026 physical brand identity artwork (complimentary card +
   // sticker), also reused as the Design/Copywriting service card imagery
   // below — the older /assets/design/bms-*.jpg renders are retired.
-  card: '/assets/branding/bms-card-front.jpg',
-  cardBack: '/assets/branding/bms-card-back.jpg',
-  sticker: '/assets/branding/bms-sticker.jpg',
+  card: '/assets/branding/bms-card-front.webp',
+  cardBack: '/assets/branding/bms-card-back.webp',
+  sticker: '/assets/branding/bms-sticker.webp',
 };
 
 export const navItems = [
@@ -288,7 +287,7 @@ export const services = [
     title: 'Design',
     text: 'Brand identity, marketing creatives and visual communication systems built to make businesses feel premium and memorable.',
     icon: 'spark',
-    image: '/assets/branding/bms-sticker.jpg',
+    image: '/assets/branding/bms-sticker.webp',
     capabilities: ['Graphic design', 'Brand identity', 'Marketing design', 'Social media creative', 'Print design'],
   },
   {
@@ -312,7 +311,7 @@ export const services = [
     title: 'Copywriting',
     text: 'Messaging and strategic communication that help founders and brands explain their value with clarity and confidence.',
     icon: 'message',
-    image: '/assets/branding/bms-card-back.jpg',
+    image: '/assets/branding/bms-card-back.webp',
     capabilities: ['Website copy', 'Brand messaging', 'Sales copy', 'Content strategy', 'Storytelling'],
   },
 ];
