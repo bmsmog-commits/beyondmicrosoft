@@ -147,6 +147,8 @@ img {
 
 .hero-copy {
   max-width: 640px;
+  /* Lets the headline size itself to this column (cqi), not the viewport. */
+  container-type: inline-size;
 }
 
 .navbar.scrolled {
@@ -356,6 +358,11 @@ img {
      the ~500-600px column available once the sidebar is accounted for,
      causing it to overlap the headshot column to its right. */
   font-size: clamp(2.4rem, 5vw, 5.4rem);
+  /* Same scale, but never wider than the column: "TECHNOLOGY." is ~8.1em
+     wide in Georgia bold, so 12cqi keeps it on one line at every width
+     (the sidebar and grid, not the viewport, set the available space).
+     Browsers without container units keep the line above. */
+  font-size: min(clamp(2.4rem, 5vw, 5.4rem), 12cqi);
   max-width: 620px;
   overflow-wrap: break-word;
   word-break: break-word;
@@ -1725,6 +1732,8 @@ blockquote span {
 .catalog-intro {
   align-items: flex-end;
   display: flex;
+  /* Lets the nowrap entry count drop below the heading on narrow phones. */
+  flex-wrap: wrap;
   gap: 1.5rem;
   justify-content: space-between;
 }
@@ -1753,6 +1762,8 @@ blockquote span {
 }
 
 .featured-image {
+  /* Reserves the image's space before it loads (it's cropped by cover anyway). */
+  aspect-ratio: 2 / 1;
   height: 100%;
   min-height: 260px;
   object-fit: cover;
@@ -1781,7 +1792,8 @@ blockquote span {
 .portfolio-grid {
   display: grid;
   gap: 1.25rem;
-  grid-template-columns: repeat(3, 1fr);
+  /* minmax(0, …): tracks may shrink below card content width (no overflow). */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .portfolio-card {
@@ -1838,7 +1850,8 @@ blockquote span {
 .lab-grid {
   display: grid;
   gap: 1.25rem;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  /* min(…, 100%): one full-width column when 320px doesn't fit (320px phones). */
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
 }
 
 .lab-card {
@@ -2068,6 +2081,9 @@ blockquote span {
 
 .sticker-item {
   max-width: 320px;
+  /* A button shrinks to its content, so the sticker was 0px wide (and its
+     space unreserved) until the image loaded. Take the final width up front. */
+  width: 100%;
 }
 
 .sticker-image {
@@ -2217,9 +2233,21 @@ blockquote span {
     --sidebar-width: 76px;
   }
 
-  .sidebar-brand-text,
-  .sidebar-nav-item span {
+  .sidebar-brand-text {
     display: none;
+  }
+
+  /* Icon-only sidebar: hide the label visually but keep it as the button's
+     accessible name (display: none would leave the buttons unnamed). */
+  .sidebar-nav-item span {
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
   }
 
   .sidebar-nav-item {
@@ -2227,7 +2255,7 @@ blockquote span {
   }
 
   .portfolio-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .portfolio-card.size-wide,
@@ -2241,6 +2269,10 @@ blockquote span {
 }
 
 @media (max-width: 760px) {
+  .bms-shell {
+    flex-direction: column;
+  }
+
   .bms-sidebar {
     display: none;
   }
@@ -2271,6 +2303,13 @@ blockquote span {
     flex-wrap: wrap;
     gap: 0.5rem;
     padding: 0.75rem 1rem;
+    /* Sticks directly below the brand bar (measured in App.jsx), never under it. */
+    top: var(--mobile-bar-height, 64px);
+  }
+
+  /* Section jumps and focus scrolling stop below both sticky bars. */
+  html {
+    scroll-padding-top: var(--mobile-header-height, 0px);
   }
 
   .topbar-actions {
@@ -2278,7 +2317,7 @@ blockquote span {
   }
 
   .portfolio-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .portfolio-card.size-wide,
