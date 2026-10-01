@@ -1162,12 +1162,22 @@ function App() {
                 <span className="eyebrow">{modal.item.organization || 'Organization pending verification'}</span>
                 <h2>{modal.item.title}</h2>
                 <p>{modal.item.date || 'Date pending verification'}</p>
-                <p className="empty-kicker">Credential metadata publishes once independently verified.</p>
+                {modal.item.credentialId && <p>Certificate No. {modal.item.credentialId}</p>}
+                {modal.item.description ? (
+                  <p>{modal.item.description}</p>
+                ) : (
+                  <p className="empty-kicker">Credential metadata publishes once independently verified.</p>
+                )}
                 <div className="button-row">
                   {modal.item.file && (
-                    <a className="btn primary" href={modal.item.file} target="_blank" rel="noreferrer">
-                      View Certificate (PDF)
-                    </a>
+                    <>
+                      <a className="btn primary" href={modal.item.file} target="_blank" rel="noreferrer">
+                        View Certificate (PDF)
+                      </a>
+                      <a className="btn secondary" href={modal.item.file} download>
+                        Download Certificate
+                      </a>
+                    </>
                   )}
                   {modal.item.verificationUrl && (
                     <a className="btn secondary" href={modal.item.verificationUrl} target="_blank" rel="noreferrer">

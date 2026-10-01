@@ -147,6 +147,25 @@ export const certificates = [
     verificationUrl: '',
     file: '/assets/certificates/gabriel-owolabi-certificate.pdf',
   },
+  // Details below are only those printed on each certificate.
+  {
+    title: 'AI Software Engineering',
+    organization: 'LuTA',
+    date: '15 September 2026',
+    credentialId: '0183',
+    verificationUrl: '',
+    description: 'Certificate of Completion in AI Software Engineering, conferred by LuTA on Gabriel Damilare Owolabi.',
+    file: '/assets/certificates/ai-software-engineering-certificate.pdf',
+  },
+  {
+    title: 'General Welding / Metal Fabrication Certificate',
+    organization: 'Oluwalogbon Technical Company',
+    date: '',
+    credentialId: '',
+    verificationUrl: '',
+    description: 'Certificate awarded to Gabriel Owolabi by Oluwalogbon Technical Company, Ikorodu, Lagos, for completing its required training courses.',
+    file: '/assets/certificates/metal-fabrication-certificate.pdf',
+  },
 ];
 
 // Real client-feedback screenshots. No names/organizations were legible in
