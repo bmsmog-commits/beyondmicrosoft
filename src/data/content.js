@@ -480,7 +480,7 @@ export const projects = [
     image: '/assets/portfolio/websites-gallery/screenshot-2026-09-17-043326.png',
     gallery: ['/assets/portfolio/websites-gallery/screenshot-2026-09-17-043326.png'],
     technologies: ['Brand Website', 'Creative Tech', 'Portfolio System'],
-    projectUrl: 'https://beyondmsoft.netlify.app/',
+    projectUrl: 'https://www.beyondmicrosoft.com/',
   },
   {
     title: 'Lutapp',
